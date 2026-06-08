@@ -453,6 +453,7 @@
     .photo-shell { display: grid; grid-template-columns: minmax(360px, .95fr) minmax(360px, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); }
     .photo-editor { border-right: 1px solid var(--line); background: #fffdf8; }
     .photo-tabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .photo-tabs .btn { min-height: 46px; line-height: 1.15; }
     .photo-tabs .btn.active, .seg-btn.active { background: #e7f0ff; border-color: #8bb8ff; color: #155eab; }
     .upload-zone { min-height: 170px; border: 1px dashed #b9b1a5; border-radius: 8px; background: #f8f5ee; display: grid; place-items: center; text-align: center; padding: 16px; position: relative; overflow: hidden; }
     .upload-zone.dragging { border-color: var(--gold); background: #fff6d9; }
@@ -462,8 +463,14 @@
     .upload-progress { height: 7px; border-radius: 999px; background: #e6dfd4; overflow: hidden; margin-top: 10px; }
     .upload-progress div { height: 100%; width: var(--w,0%); background: var(--green); border-radius: inherit; }
     .stock-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-    .stock-tile { min-height: 62px; border-radius: 8px; border: 1px solid var(--line); color: #fff; font-weight: 850; display: grid; place-items: end start; padding: 9px; text-align: left; overflow: hidden; }
+    .stock-tile { min-height: 76px; border-radius: 8px; border: 1px solid var(--line); color: #fff; font-weight: 850; display: grid; place-items: center; padding: 9px; text-align: center; overflow: hidden; }
+    .stock-tile span { display: grid; gap: 4px; place-items: center; font-size: 11px; }
+    .stock-tile b { font-size: 22px; line-height: 1; color: rgba(255,255,255,.92); }
     .stock-tile.active { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .url-help { margin-top: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 10px 12px; display: grid; gap: 8px; }
+    .url-help span { display: block; color: var(--ink-2); font-size: 11px; line-height: 1.45; }
+    .url-help span:before { content: "✓"; color: var(--green); font-weight: 900; margin-right: 6px; }
+    .url-help span.warn:before { content: "i"; color: var(--blue); }
     .photo-menu-preview { background: #f4f1e9; min-height: 100%; }
     .photo-preview-hero { background: #17130f; color: #fff3db; padding: 16px 20px; }
     .photo-preview-hero strong { color: var(--gold); }
@@ -680,7 +687,7 @@
 
     <main class="main">
       <header class="topbar">
-        <div class="page-name"><h1 id="title">Full UI</h1><p id="subtitle">Six-screen product walkthrough</p></div>
+        <div class="page-name"><h1 id="title">Food Photos</h1><p id="subtitle">Upload and tune item imagery</p></div>
         <label class="search">⌕ <input id="globalSearch" placeholder="Search menus, templates, export jobs..." autocomplete="off"></label>
         <div class="top-actions">
           <button class="btn icon" data-screen="qr" title="QR generator">▣</button>
@@ -693,11 +700,11 @@
       <section class="screen" id="templates"></section>
       <section class="screen" id="editor"></section>
       <section class="screen" id="ai"></section>
-      <section class="screen active" id="fullui"></section>
+      <section class="screen" id="fullui"></section>
       <section class="screen" id="exports"></section>
       <section class="screen" id="qr"></section>
       <section class="screen" id="public"></section>
-      <section class="screen" id="photos"></section>
+      <section class="screen active" id="photos"></section>
       <section class="screen" id="currency"></section>
       <section class="screen" id="schema"></section>
       <section class="screen" id="auth"></section>
@@ -752,7 +759,7 @@
     ];
 
     const state = {
-      active: "fullui",
+      active: "photos",
       templateFilter: "All",
       menuColor: "#17130f",
       restaurant: "Al Nakheel",
@@ -1293,12 +1300,12 @@
       const sizes = [["Small","44px"],["Medium","60px"],["Large","80px"],["No photo","0"]];
       const badges = ["Bestseller", "New", "Spicy", "Vegan", "Halal", "Vegetarian"];
       const stock = [
-        ["crispy-pata", "Crispy pata", "linear-gradient(135deg,#7d4a26,#f4c27a)"],
-        ["kare-kare", "Kare-Kare", "linear-gradient(135deg,#b8860b,#f5e4a3)"],
-        ["sinigang", "Sinigang", "linear-gradient(135deg,#2d6a4f,#9bd6a8)"],
-        ["halo-halo", "Halo-Halo", "linear-gradient(135deg,#6d4aff,#f3b2d8)"],
-        ["adobo", "Adobo", "linear-gradient(135deg,#17130f,#8a6a4f)"],
-        ["pancit", "Pancit", "linear-gradient(135deg,#bd3d30,#f0b35a)"]
+        ["crispy-pata", "Crispy pata", "linear-gradient(135deg,#7d4a26,#f4c27a)", "🍖"],
+        ["kare-kare", "Kare-Kare", "linear-gradient(135deg,#b8860b,#f5e4a3)", "🥘"],
+        ["sinigang", "Sinigang", "linear-gradient(135deg,#2d6a4f,#9bd6a8)", "🍲"],
+        ["halo-halo", "Halo-Halo", "linear-gradient(135deg,#6d4aff,#f3b2d8)", "🍧"],
+        ["adobo", "Adobo", "linear-gradient(135deg,#17130f,#8a6a4f)", "🍗"],
+        ["pancit", "Pancit", "linear-gradient(135deg,#bd3d30,#f0b35a)", "🍜"]
       ];
       const image = state.photoImage || (state.photoStock !== "none" ? stock.find(s => s[0] === state.photoStock)?.[2] : "");
       const fit = state.photoFit === "Contain" ? "contain" : state.photoFit === "Stretch" ? "fill" : "cover";
@@ -1321,22 +1328,21 @@
               <div class="field"><label>Item name</label><input id="photoName" value="${state.photoName}"></div>
               <div class="grid-2"><div class="field"><label>Price</label><input id="photoPrice" value="${state.photoPrice}"></div><div class="field"><label>Description</label><input id="photoDesc" value="${state.photoDesc}"></div></div>
               <div class="section-label">Food photo</div>
-              <div class="photo-tabs">${sourceTabs.map(t=>`<button class="btn ${state.photoSource===t?"active":""}" data-photo-source="${t}">${t}</button>`).join("")}</div>
+              <div class="photo-tabs">${sourceTabs.map(t=>`<button class="btn ${state.photoSource===t?"active":""}" data-photo-source="${t}">${t === "Upload" ? "Upload" : t === "From URL" ? "From<br>URL" : "Stock<br>photos"}</button>`).join("")}</div>
               ${state.photoSource === "Upload" ? `
                 <div class="upload-zone ${state.photoImage?"has-image":""}" id="photoDropZone" style="margin-top:10px">
-                  ${state.photoImage ? `<img src="${state.photoImage}" alt="${state.photoName}"><div class="photo-overlay"><div class="chips"><button class="btn dark" id="replacePhoto">Replace</button><button class="btn" id="removePhoto">Remove</button></div></div>` : `<div><div style="font-size:32px;color:var(--muted)">Upload</div><strong>Drag and drop your food photo here</strong><p style="color:var(--muted);font-size:11px;line-height:1.5">PNG, JPG, WebP - max 10 MB<br>Best results: 800x800px or larger, good lighting</p><button class="btn dark" id="simulateUpload">Browse files</button></div>`}
+                  ${state.photoImage ? `<img src="${state.photoImage}" alt="${state.photoName}"><div class="photo-overlay"><div class="chips"><button class="btn dark" id="replacePhoto">Replace</button><button class="btn" id="removePhoto">Remove</button></div></div>` : `<div><div style="font-size:32px;color:var(--muted)">⇧</div><strong>Drag and drop your food photo here</strong><p style="color:var(--muted);font-size:11px;line-height:1.5">PNG, JPG, WebP - max 10 MB<br>Best results: 800x800px or larger, good lighting</p><button class="btn dark" id="simulateUpload">Browse files</button></div>`}
                 </div>
                 <input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" hidden>
                 ${state.photoUploadProgress > 0 && state.photoUploadProgress < 100 ? `<div class="upload-progress" style="--w:${state.photoUploadProgress}%"><div></div></div>` : ""}
               ` : ""}
               ${state.photoSource === "From URL" ? `
-                <div class="field" style="margin-top:10px"><label>Image URL</label><input id="photoUrl" value="${state.photoUrl}" placeholder="https://example.com/food.jpg"></div>
-                <button class="btn dark" style="width:100%" id="loadPhotoUrl">Load image</button>
-                <p style="color:var(--muted);font-size:11px;line-height:1.5">Works with Google Drive, Dropbox, Imgur, or any direct .jpg/.png/.webp URL.</p>
+                <div class="grid-2" style="margin-top:10px;grid-template-columns:1fr 88px"><div class="field" style="margin:0"><label>Image URL</label><input id="photoUrl" value="${state.photoUrl}" placeholder="https://example.com/food-photo.jpg"></div><button class="btn dark" id="loadPhotoUrl" style="align-self:end">Load</button></div>
+                <div class="url-help"><span>Works with direct image links ending in .jpg, .png, or .webp</span><span>Use Google Drive, Dropbox, or Imgur for permanent links</span><span class="warn">Some sites block hotlinking; upload directly for best results</span></div>
               ` : ""}
               ${state.photoSource === "Stock photos" ? `
-                <div class="stock-grid" style="margin-top:10px">${stock.map(s=>`<button class="stock-tile ${state.photoStock===s[0]?"active":""}" data-stock-photo="${s[0]}" style="background:${s[2]}"><span>${s[1]}</span></button>`).join("")}</div>
-                <p style="color:var(--muted);font-size:11px">Pro users can search 10,000+ real food photos from the stock library.</p>
+                <div class="stock-grid" style="margin-top:10px">${stock.map(s=>`<button class="stock-tile ${state.photoStock===s[0]?"active":""}" data-stock-photo="${s[0]}" style="background:${s[2]}"><span><b>${s[3]}</b>${s[1]}</span></button>`).join("")}</div>
+                <p style="color:var(--muted);font-size:11px;text-align:center">Click a photo to use it · Pro: 10,000+ real food photos</p>
               ` : ""}
               <div class="section-label">Image display</div>
               <div class="chips">${fits.map(f=>`<button class="chip seg-btn ${state.photoFit===f?"active":""}" data-photo-fit="${f}">${f}</button>`).join("")}</div>
@@ -1362,7 +1368,7 @@
               ["Kare-Kare","Oxtail stew, peanut sauce, bagoong","Halal","490","KK"],
               ["Sinigang na Salmon","Tamarind broth, vegetables","Vegan","420","SS"]
             ].map(i=>`<div class="photo-preview-item ${showPhoto ? "" : "no-photo"}">${renderThumb(i[4])}<div><h4>${i[0]}</h4><p>${i[1]}</p><span class="badge ${i[2]==="Vegan"?"green":"blue"}">${i[2]}</span></div><div class="phone-food-price">${state.currency[1]} ${i[3]}</div></div>`).join("")}
-            <div class="card photo-tips"><strong>Photo tips for best results</strong><p style="color:var(--muted);line-height:1.55;margin-bottom:0">Natural light or diffused light works best. Square or overhead angle works best on menus. Phone camera is fine - we auto-optimise on upload.</p></div>
+            <div class="card photo-tips"><strong>Photo tips for best results</strong><div style="display:grid;gap:5px;margin-top:8px;color:var(--ink-2);font-size:11px"><span>Natural light or diffused light avoids harsh flash</span><span>Square or overhead angle works best on menus</span><span>Phone camera is fine - we auto-optimise on upload</span></div></div>
           </div>
         </div>`;
     }
