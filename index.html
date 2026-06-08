@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MenuCraft Pro Dashboard</title>
+  <style>
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.25s;
+      animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    * { box-sizing: border-box; }
+    :root {
+      --ink: #17130f;
+      --ink-2: #332b23;
+      --muted: #74695d;
+      --faint: #a99d91;
+      --paper: #fffdf8;
+      --cream: #f5efe4;
+      --line: rgba(23, 19, 15, .11);
+      --gold: #c8a34a;
+      --gold-2: #fff5d5;
+      --green: #2d6a4f;
+      --green-2: #dcf1e8;
+      --red: #bd3d30;
+      --red-2: #ffe8e4;
+      --blue: #1b4166;
+      --blue-2: #e2edf6;
+      --teal: #24766d;
+      --shadow: 0 20px 60px rgba(35, 24, 15, .12);
+      --radius: 8px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #eee7da;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 224px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #15120f;
+      color: #efe8db;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 4px 6px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--gold);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    .brand strong { display: block; font-size: 14px; }
+    .brand span { display: block; font-size: 10px; color: rgba(239,232,219,.52); margin-top: 2px; }
+
+    .nav-group-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: rgba(239,232,219,.35);
+      padding: 0 8px;
+      margin-top: 2px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 3px;
+    }
+
+    .nav button {
+      border: 0;
+      width: 100%;
+      background: transparent;
+      color: rgba(239,232,219,.68);
+      border-radius: 7px;
+      padding: 9px 10px;
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .nav button:hover { background: rgba(255,255,255,.06); color: #fff8ea; }
+    .nav button.active { background: rgba(200,163,74,.16); color: var(--gold); }
+    .nav .count { margin-left: auto; font-size: 10px; color: inherit; background: rgba(255,255,255,.08); padding: 2px 7px; border-radius: 999px; }
+
+    .plan {
+      margin-top: auto;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .plan small { color: var(--gold); text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }
+    .plan strong { display: block; margin: 5px 0 2px; font-size: 13px; }
+    .meter { height: 4px; border-radius: 99px; background: rgba(255,255,255,.1); margin: 10px 0; overflow: hidden; }
+    .meter div { height: 100%; width: 62%; background: var(--gold); }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      min-height: 64px;
+      background: rgba(255,253,248,.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 22px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .page-name { min-width: 230px; }
+    .page-name h1 { font-size: 18px; margin: 0; font-weight: 760; }
+    .page-name p { font-size: 12px; margin: 2px 0 0; color: var(--muted); }
+
+    .search {
+      flex: 1;
+      max-width: 520px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .search input { border: 0; outline: 0; flex: 1; min-width: 0; background: transparent; color: var(--ink); }
+
+    .top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink-2);
+      border-radius: 7px;
+      min-height: 36px;
+      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .btn.dark { background: var(--ink); color: #fff8eb; border-color: var(--ink); }
+    .btn.gold { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+    .btn.icon { width: 36px; padding: 0; }
+
+    .screen { display: none; padding: 20px 22px 28px; }
+    .screen.active { display: block; }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    .split { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(320px,.7fr); gap: 12px; align-items: start; }
+
+    .card, .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 0 rgba(255,255,255,.65) inset;
+    }
+
+    .card { padding: 15px; }
+    .panel { overflow: hidden; }
+    .panel-head {
+      min-height: 48px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .panel-title { font-size: 13px; font-weight: 760; display: flex; align-items: center; gap: 7px; }
+    .panel-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .panel-body { padding: 14px; }
+
+    .kpi .label { color: var(--muted); font-size: 12px; }
+    .kpi .value { font-size: 28px; font-weight: 780; margin: 8px 0 3px; }
+    .kpi .trend { font-size: 11px; color: var(--green); }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: 0; }
+    .thumb {
+      width: 42px;
+      height: 42px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 800;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.2), rgba(0,0,0,.18)),
+        var(--gold);
+      flex: none;
+      overflow: hidden;
+    }
+    .food-1 { background: linear-gradient(135deg,#7b3e1d,#e4ad58); }
+    .food-2 { background: linear-gradient(135deg,#2d6a4f,#d7a74b); }
+    .food-3 { background: linear-gradient(135deg,#693012,#c0392b); }
+    .food-4 { background: linear-gradient(135deg,#315b91,#f0d99b); }
+    .food-5 { background: linear-gradient(135deg,#52291c,#f6c868); }
+    .row strong { display: block; font-size: 13px; }
+    .row span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 750;
+      background: var(--gold-2);
+      color: #80620f;
+      white-space: nowrap;
+    }
+    .badge.green { background: var(--green-2); color: var(--green); }
+    .badge.red { background: var(--red-2); color: var(--red); }
+    .badge.blue { background: var(--blue-2); color: var(--blue); }
+
+    .tabs, .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .chip.active { background: var(--ink); color: #fff7e8; border-color: var(--ink); }
+
+    .template-card {
+      overflow: hidden;
+      padding: 0;
+      transition: transform .18s, border-color .18s;
+    }
+    .template-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+    .template-preview { height: 132px; padding: 16px; color: white; display: flex; flex-direction: column; justify-content: space-between; }
+    .template-preview .mini-lines { display: grid; gap: 4px; }
+    .template-preview .mini-lines i { display: block; height: 5px; border-radius: 4px; background: rgba(255,255,255,.5); }
+    .template-info { padding: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+
+    .editor-shell {
+      height: calc(100vh - 104px);
+      min-height: 680px;
+      display: grid;
+      grid-template-columns: 262px minmax(420px, 1fr) 244px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--paper);
+    }
+    .editor-side, .inspector { overflow: auto; background: #fffdf9; }
+    .editor-side { border-right: 1px solid var(--line); }
+    .inspector { border-left: 1px solid var(--line); }
+    .tool-tabs { display: grid; grid-template-columns: repeat(4,1fr); border-bottom: 1px solid var(--line); }
+    .tool-tabs button { border: 0; border-right: 1px solid var(--line); background: #fff; padding: 10px 4px; font-size: 11px; color: var(--muted); }
+    .tool-tabs button.active { color: var(--ink); background: var(--cream); font-weight: 750; }
+    .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin: 16px 0 8px; }
+    .editor-pad { padding: 14px; }
+    .item-card { border: 1px solid var(--line); border-radius: 8px; padding: 9px; display: flex; gap: 9px; align-items: center; margin-bottom: 8px; background: #fff; }
+    .item-card:hover { border-color: var(--gold); }
+    .item-card .price { margin-left: auto; font-weight: 760; color: #80620f; font-size: 12px; }
+
+    .canvas-wrap {
+      background: #ece3d4;
+      overflow: auto;
+      padding: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .menu-page {
+      width: 420px;
+      min-height: 594px;
+      background: #fffdf8;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      transform-origin: top center;
+    }
+    .menu-head {
+      background: var(--menu-color, #17130f);
+      color: #f7eddb;
+      padding: 26px;
+    }
+    .menu-brand { display: flex; gap: 13px; align-items: center; }
+    .menu-logo { width: 48px; height: 48px; background: var(--gold); color: var(--menu-color, #17130f); border-radius: 8px; display: grid; place-items: center; font-weight: 900; }
+    .menu-title { color: var(--gold); font-family: Georgia, serif; font-size: 24px; font-weight: 700; }
+    .menu-tag { color: rgba(255,248,235,.55); font-size: 10px; margin-top: 3px; text-transform: uppercase; letter-spacing: .08em; }
+    .menu-contact { display: flex; gap: 16px; margin-top: 14px; color: rgba(255,248,235,.58); font-size: 10px; }
+    .menu-body { padding: 20px; }
+    .menu-section { margin: 16px 0 9px; display: flex; align-items: center; gap: 9px; color: #8a6817; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+    .menu-section:before, .menu-section:after { content: ""; height: 1px; background: var(--line); flex: 1; }
+    .menu-food { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(23,19,15,.08); }
+    .menu-food h3 { margin: 0; font-size: 13px; }
+    .menu-food p { margin: 3px 0 5px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .menu-food .mprice { font-size: 13px; color: #80620f; font-weight: 800; }
+    .qr-block { margin-top: 18px; background: var(--cream); border-radius: 8px; padding: 12px; text-align: center; color: var(--muted); font-size: 10px; }
+    .fake-qr { width: 54px; height: 54px; margin: 7px auto; background: repeating-linear-gradient(90deg,#17130f 0 5px,#fff 5px 9px); border: 6px solid #17130f; }
+
+    .field { display: grid; gap: 5px; margin-bottom: 11px; }
+    .field label { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .field input, .field select, .field textarea {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 9px;
+      background: #fff;
+      color: var(--ink);
+      min-width: 0;
+    }
+    .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+    .swatch { width: 24px; height: 24px; border-radius: 5px; border: 2px solid transparent; }
+    .swatch.active { border-color: var(--ink); }
+
+    .export-list { display: grid; gap: 7px; margin-top: 8px; }
+    .export-list .btn { justify-content: flex-start; width: 100%; }
+
+    .ai-hero {
+      background: #17130f;
+      color: #efe8db;
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+    }
+    .ai-hero h2 { margin: 0; color: var(--gold); font-size: 22px; }
+    .ai-hero p { margin: 6px 0 0; max-width: 620px; color: rgba(239,232,219,.66); line-height: 1.55; }
+    .ai-card { min-height: 118px; }
+    .ai-card button { margin-top: 12px; }
+    .result { background: var(--cream); border-radius: 7px; padding: 12px; color: var(--ink-2); line-height: 1.55; min-height: 72px; }
+
+    .progress-steps { display: grid; grid-template-columns: repeat(5,1fr); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .progress-steps button { border: 0; border-right: 1px solid var(--line); background: #fff; padding: 10px 6px; color: var(--muted); font-size: 12px; }
+    .progress-steps button:last-child { border-right: 0; }
+    .progress-steps button.active { background: var(--ink); color: #fff7e8; }
+    .job-row { display: grid; grid-template-columns: 1.2fr .8fr .8fr .7fr auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+    .job-row:last-child { border-bottom: 0; }
+    .bar { height: 6px; background: var(--cream); border-radius: 999px; overflow: hidden; }
+    .bar div { height: 100%; background: var(--gold); border-radius: inherit; width: var(--w); }
+
+    .phone {
+      width: 300px;
+      background: #17130f;
+      border-radius: 34px;
+      padding: 12px;
+      margin: auto;
+      box-shadow: var(--shadow);
+    }
+    .phone-screen {
+      height: 570px;
+      overflow: auto;
+      border-radius: 24px;
+      background: #fffaf0;
+    }
+    .public-hero { background: var(--public-color, #17130f); color: #fff3db; padding: 22px 16px; }
+    .public-hero h2 { margin: 0; color: var(--gold); font-family: Georgia, serif; font-size: 20px; }
+    .public-hero p { margin: 3px 0 14px; color: rgba(255,243,219,.55); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+    .public-contact { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; font-size: 9px; text-align: center; color: rgba(255,243,219,.62); }
+    .public-search { padding: 11px; background: #fffaf0; border-bottom: 1px solid var(--line); }
+    .public-search input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; }
+    .public-item { display: flex; gap: 9px; margin: 8px 11px; padding: 9px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+    .public-item strong { font-size: 12px; }
+    .public-item p { font-size: 10px; color: var(--muted); margin: 3px 0; }
+
+    .qr-demo {
+      width: 190px;
+      height: 190px;
+      background:
+        linear-gradient(90deg, var(--qr-color,#17130f) 12px, transparent 12px) 0 0 / 24px 24px,
+        linear-gradient(var(--qr-color,#17130f) 12px, transparent 12px) 0 0 / 24px 24px,
+        #fff;
+      border: 14px solid #fff;
+      outline: 1px solid var(--line);
+      margin: 12px auto;
+      position: relative;
+    }
+    .qr-demo:after { content: "MC"; position: absolute; inset: 68px; border-radius: 8px; background: #fff; display: grid; place-items: center; color: var(--qr-color,#17130f); font-weight: 900; }
+
+    .currency-list { max-height: 540px; overflow: auto; }
+    .currency-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 9px; align-items: center; padding: 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .currency-row.active { background: var(--blue-2); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    th { color: var(--muted); background: #f8f3ea; font-size: 11px; }
+    tr:hover td { background: #fbf5eb; }
+
+    .pricing { align-items: stretch; }
+    .price-card { display: flex; flex-direction: column; gap: 12px; }
+    .price { font-size: 34px; font-weight: 820; }
+    .price small { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .features { display: grid; gap: 8px; color: var(--ink-2); font-size: 13px; }
+
+    .concept-img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: var(--ink);
+      color: #fff8eb;
+      border-radius: 8px;
+      padding: 11px 13px;
+      box-shadow: var(--shadow);
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      font-size: 13px;
+      z-index: 50;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    @media (max-width: 1050px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .nav { grid-template-columns: repeat(4,1fr); }
+      .plan { display: none; }
+      .grid-4, .grid-3, .grid-2, .split { grid-template-columns: 1fr; }
+      .editor-shell { height: auto; min-height: 0; grid-template-columns: 1fr; }
+      .editor-side, .inspector { border: 0; }
+      .canvas-wrap { min-height: 640px; }
+      .topbar { flex-wrap: wrap; padding: 14px; }
+      .page-name { min-width: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">MC</div>
+        <div><strong>MenuCraft Pro</strong><span>Restaurant menu studio</span></div>
+      </div>
+      <div class="nav-group-label">Workspace</div>
+      <nav class="nav" id="nav"></nav>
+      <div class="plan">
+        <small>Pro trial</small>
+        <strong>12 days remaining</strong>
+        <span style="font-size:11px;color:rgba(239,232,219,.55)">18 of 30 exports used</span>
+        <div class="meter"><div></div></div>
+        <button class="btn gold" style="width:100%" data-screen="pricing">Upgrade plan</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-name"><h1 id="title">Dashboard</h1><p id="subtitle">Live restaurant menu operations</p></div>
+        <label class="search">⌕ <input id="globalSearch" placeholder="Search menus, templates, export jobs..." autocomplete="off"></label>
+        <div class="top-actions">
+          <button class="btn icon" data-screen="qr" title="QR generator">▣</button>
+          <button class="btn" data-screen="public">Public menu</button>
+          <button class="btn dark" data-screen="editor">Create menu</button>
+        </div>
+      </header>
+
+      <section class="screen active" id="dashboard"></section>
+      <section class="screen" id="templates"></section>
+      <section class="screen" id="editor"></section>
+      <section class="screen" id="ai"></section>
+      <section class="screen" id="exports"></section>
+      <section class="screen" id="qr"></section>
+      <section class="screen" id="public"></section>
+      <section class="screen" id="photos"></section>
+      <section class="screen" id="currency"></section>
+      <section class="screen" id="admin"></section>
+      <section class="screen" id="pricing"></section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const screens = [
+      ["dashboard", "Dashboard", "Live restaurant menu operations", "⌂"],
+      ["templates", "Templates", "Choose a starting point", "▤"],
+      ["editor", "Menu Editor", "Design, edit and export your menu", "✎"],
+      ["ai", "AI Assistant", "Copywriting, translation and design suggestions", "✦"],
+      ["exports", "Export Center", "PDF, social, storage and render jobs", "⇩", "4"],
+      ["qr", "QR Generator", "Scan-ready public menu links", "▣"],
+      ["public", "Digital Menu", "Customer-facing mobile menu", "◉"],
+      ["photos", "Food Photos", "Upload and tune item imagery", "▧"],
+      ["currency", "Currency", "Regional pricing display", "$"],
+      ["admin", "Admin", "Users, subscriptions and flags", "⚙"],
+      ["pricing", "Pricing", "Plans and upgrade flows", "★"]
+    ];
+
+    const menuItems = [
+      { name: "Hummus Trio", desc: "Classic, truffle and roasted red pepper hummus with warm pita", price: 45, cat: "Starters", tags: ["Vegan", "New"], photo: "food-2" },
+      { name: "Fattoush Salad", desc: "Crispy pita, pomegranate and sumac dressing", price: 32, cat: "Starters", tags: ["Vegan"], photo: "food-4" },
+      { name: "Mixed Grill Platter", desc: "Lamb chops, chicken tawook and kofta with grilled vegetables", price: 85, cat: "Mains", tags: ["Bestseller", "Halal"], photo: "food-1" },
+      { name: "Slow Cooked Lamb Ouzi", desc: "Saffron rice, toasted nuts and spiced lamb shoulder", price: 110, cat: "Mains", tags: ["Halal"], photo: "food-3" },
+      { name: "Kunafa", desc: "Crisp kataifi pastry, cheese filling and rose syrup", price: 34, cat: "Desserts", tags: ["Bestseller"], photo: "food-5" }
+    ];
+
+    const templates = [
+      ["Fine Dining", "Maison Noir", "#17130f", "Pro"], ["Arabic", "Al Nakheel", "#8b681b", "Pro"], ["Cafe", "Rustic Brew", "#7d4a26", "Free"],
+      ["Luxury", "Aurelius Gold", "#233328", "Pro"], ["Fast Food", "Quick Bite", "#bd3d30", "Free"], ["Minimal", "Modern White", "#63707a", "Free"],
+      ["Seafood", "Blue Catch", "#1b4166", "Pro"], ["Bakery", "Sweet Bites", "#a35d73", "Free"], ["Filipino", "Kusina ni Lola", "#2d6a4f", "Pro"]
+    ];
+
+    const currencies = [
+      ["AED", "AED", "United Arab Emirates", [45, 32, 85, 110, 34]],
+      ["USD", "$", "United States", [12, 9, 23, 30, 9]],
+      ["PHP", "₱", "Philippines", [690, 490, 1300, 1680, 520]],
+      ["SAR", "SAR", "Saudi Arabia", [46, 33, 87, 112, 35]],
+      ["EUR", "€", "Eurozone", [11, 8, 21, 27, 8]],
+      ["INR", "₹", "India", [1000, 710, 1890, 2440, 755]],
+      ["GBP", "£", "United Kingdom", [9, 7, 18, 24, 7]],
+      ["SGD", "S$", "Singapore", [16, 12, 31, 40, 12]]
+    ];
+
+    const state = {
+      active: "dashboard",
+      templateFilter: "All",
+      menuColor: "#17130f",
+      restaurant: "Al Nakheel",
+      tagline: "Authentic Arabic Cuisine",
+      aiPrompt: "",
+      exportStage: 1,
+      qrColor: "#17130f",
+      publicColor: "#17130f",
+      showPhotos: true,
+      showPrices: true,
+      publicSearch: "",
+      currency: currencies[0],
+      decimals: 0,
+      adminFilter: "All"
+    };
+
+    function html(strings, ...values) { return strings.map((s, i) => s + (values[i] ?? "")).join(""); }
+    function qs(sel) { return document.querySelector(sel); }
+    function qsa(sel) { return [...document.querySelectorAll(sel)]; }
+    function toast(msg) {
+      const t = qs("#toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2200);
+    }
+    function transition(fn) {
+      if (document.startViewTransition) document.startViewTransition(fn);
+      else fn();
+    }
+    function setScreen(id) {
+      transition(() => {
+        state.active = id;
+        qsa(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+        qsa("[data-screen]").forEach(b => b.classList.toggle("active", b.dataset.screen === id));
+        const meta = screens.find(s => s[0] === id);
+        qs("#title").textContent = meta[1];
+        qs("#subtitle").textContent = meta[2];
+        renderNav();
+      });
+    }
+
+    function renderNav() {
+      qs("#nav").innerHTML = screens.map(([id, label, _sub, icon, count]) => `
+        <button class="${state.active === id ? "active" : ""}" data-screen="${id}">
+          <span>${icon}</span>${label}${count ? `<span class="count">${count}</span>` : ""}
+        </button>
+      `).join("");
+    }
+
+    function card(title, body, cls = "") {
+      return `<div class="card ${cls}">${title ? `<div class="panel-title" style="margin-bottom:10px">${title}</div>` : ""}${body}</div>`;
+    }
+
+    function row(item) {
+      return `<div class="row">
+        <div class="thumb ${item.photo}">${item.name[0]}</div>
+        <div style="min-width:0"><strong>${item.name}</strong><span>${item.desc}</span></div>
+        <span class="badge">${state.currency[1]} ${item.price}</span>
+      </div>`;
+    }
+
+    function renderDashboard() {
+      qs("#dashboard").innerHTML = html`
+        <div class="grid-4">
+          ${card("", `<div class="kpi"><div class="label">Live menus</div><div class="value">18</div><div class="trend">+3 this week</div></div>`)}
+          ${card("", `<div class="kpi"><div class="label">QR scans</div><div class="value">1,284</div><div class="trend">+32% vs last month</div></div>`)}
+          ${card("", `<div class="kpi"><div class="label">Exports</div><div class="value">89</div><div class="trend">PDF and social images</div></div>`)}
+          ${card("", `<div class="kpi"><div class="label">AI credits</div><div class="value">12</div><div class="trend">resets midnight</div></div>`)}
+        </div>
+        <div class="split" style="margin-top:12px">
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Recent menus</div><div class="panel-sub">Click any row to edit</div></div><button class="btn" data-screen="editor">Open editor</button></div>
+            <div class="panel-body">${menuItems.slice(0,4).map(row).join("")}</div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Activity</div><div class="panel-sub">Latest product events</div></div></div>
+            <div class="panel-body">
+              ${["PDF export completed for Al Nakheel", "QR code scanned 50 times on Friday", "Arabic template published", "Photo added to Mixed Grill", "Upgrade prompt shown after social export"].map((x,i)=>`
+                <div class="row"><span class="badge ${i===0?"green":i===4?"red":""}">${i+1}</span><div><strong>${x}</strong><span>${i+2}h ago</span></div></div>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+        <div class="grid-3" style="margin-top:12px">
+          ${["Export Center|PDF and social rendering jobs|exports", "QR Generator|Create scan-ready table cards|qr", "Digital Menu|Preview the public customer page|public"].map(x => {
+            const [a,b,c] = x.split("|");
+            return card(a, `<p style="color:var(--muted);line-height:1.5">${b}</p><button class="btn dark" data-screen="${c}">Open</button>`);
+          }).join("")}
+        </div>`;
+    }
+
+    function renderTemplates() {
+      const filters = ["All", "Arabic", "Cafe", "Luxury", "Free", "Pro"];
+      const shown = templates.filter(t => state.templateFilter === "All" || t.includes(state.templateFilter));
+      qs("#templates").innerHTML = `
+        <div class="panel" style="margin-bottom:12px"><div class="panel-head"><div><div class="panel-title">Template library</div><div class="panel-sub">9 launch-ready template families</div></div><div class="chips">${filters.map(f=>`<button class="chip ${state.templateFilter===f?"active":""}" data-filter="${f}">${f}</button>`).join("")}</div></div></div>
+        <div class="grid-3">${shown.map(t=>`
+          <button class="card template-card" data-template="${t[1]}" style="text-align:left">
+            <div class="template-preview" style="background:${t[2]}">
+              <span class="badge ${t[3]==="Free"?"green":""}" style="align-self:flex-start">${t[3]}</span>
+              <div><strong style="font-size:20px;font-family:Georgia,serif">${t[1]}</strong><div style="font-size:11px;opacity:.7;margin-top:4px">${t[0]} menu system</div></div>
+              <div class="mini-lines"><i style="width:80%"></i><i style="width:62%"></i><i style="width:70%"></i></div>
+            </div>
+            <div class="template-info"><div><strong>${t[1]}</strong><span style="display:block;color:var(--muted);font-size:11px;margin-top:2px">${t[0]} · A4 / social / QR</span></div><span>→</span></div>
+          </button>
+        `).join("")}</div>`;
+    }
+
+    function renderMenuPage() {
+      const grouped = ["Starters", "Mains", "Desserts"].map(cat => `
+        <div class="menu-section">${cat}</div>
+        ${menuItems.filter(i => i.cat === cat).map(i => `
+          <div class="menu-food">
+            <div class="thumb ${i.photo}" style="width:54px;height:54px">${i.name[0]}</div>
+            <div><h3>${i.name}</h3><p>${i.desc}</p><div class="chips">${i.tags.map(tag=>`<span class="badge ${tag==="Vegan"?"green":tag==="Halal"?"blue":""}">${tag}</span>`).join("")}</div></div>
+            <div class="mprice">${state.currency[1]} ${i.price}</div>
+          </div>
+        `).join("")}
+      `).join("");
+      return `<article class="menu-page" style="--menu-color:${state.menuColor}">
+        <div class="menu-head">
+          <div class="menu-brand"><div class="menu-logo">ن</div><div><div class="menu-title">${state.restaurant}</div><div class="menu-tag">${state.tagline} · EST. 2008</div></div></div>
+          <div class="menu-contact"><span>+971 4 123 4567</span><span>Dubai Marina</span><span>alnakheel.ae</span></div>
+        </div>
+        <div class="menu-body">${grouped}<div class="qr-block">SCAN FOR DIGITAL MENU<div class="fake-qr"></div>alnakheel.menucraft.pro</div></div>
+      </article>`;
+    }
+
+    function renderEditor() {
+      qs("#editor").innerHTML = `
+        <div class="editor-shell">
+          <aside class="editor-side">
+            <div class="tool-tabs"><button class="active">Items</button><button>Text</button><button>Photos</button><button>Layers</button></div>
+            <div class="editor-pad">
+              <div class="section-label">Categories</div>
+              <div class="chips">${["Starters","Mains","Desserts","Drinks"].map((c,i)=>`<button class="chip ${i===0?"active":""}">${c}</button>`).join("")}</div>
+              <div class="section-label">Drag menu items</div>
+              ${menuItems.map(i=>`<div class="item-card"><div class="thumb ${i.photo}" style="width:38px;height:38px">${i.name[0]}</div><div><strong>${i.name}</strong><span style="display:block;color:var(--muted);font-size:11px">${i.cat}</span></div><div class="price">${state.currency[1]} ${i.price}</div></div>`).join("")}
+              <button class="btn" style="width:100%" data-screen="photos">Add food photo</button>
+            </div>
+          </aside>
+          <div>
+            <div class="panel-head" style="background:#fff"><div><div class="panel-title">Al Nakheel Restaurant</div><div class="panel-sub">A4 portrait · Arabic luxury template · autosaved</div></div><div class="chips"><span class="badge green">Live</span><span class="badge blue">RTL ready</span></div></div>
+            <div class="canvas-wrap">${renderMenuPage()}</div>
+          </div>
+          <aside class="inspector">
+            <div class="editor-pad">
+              <div class="section-label">Design properties</div>
+              <div class="field"><label>Restaurant name</label><input id="restaurantName" value="${state.restaurant}"></div>
+              <div class="field"><label>Tagline</label><input id="restaurantTagline" value="${state.tagline}"></div>
+              <div class="field"><label>Primary colour</label><div class="swatches">${["#17130f","#c8a34a","#2d6a4f","#bd3d30","#1b4166","#7d4a26"].map(c=>`<button class="swatch ${state.menuColor===c?"active":""}" data-color="${c}" style="background:${c}"></button>`).join("")}</div></div>
+              <div class="field"><label>Page size</label><select><option>A4 Portrait</option><option>A4 Landscape</option><option>A5 Portrait</option><option>Bi-fold brochure</option></select></div>
+              <div class="field"><label>Font family</label><select><option>Playfair Display + Inter</option><option>Noto Arabic + Inter</option><option>Cormorant + DM Sans</option></select></div>
+              <button class="btn" style="width:100%" data-screen="ai">✦ AI design suggest</button>
+              <div class="section-label">Export</div>
+              <div class="export-list">
+                <button class="btn dark" data-export="PDF">Export print PDF</button>
+                <button class="btn" data-export="Instagram">Instagram post</button>
+                <button class="btn" data-export="WhatsApp">WhatsApp catalog</button>
+                <button class="btn" data-screen="public">Publish online</button>
+              </div>
+            </div>
+          </aside>
+        </div>`;
+    }
+
+    function renderAI() {
+      const prompts = [
+        ["Generate descriptions", "Write a premium description for Slow Cooked Lamb Ouzi with saffron rice"],
+        ["Translate menus", "Translate this section to Arabic: Hummus Trio AED 45, Mixed Grill AED 85"],
+        ["Promo copy", "Write a Ramadan Instagram caption for Al Nakheel in Dubai"],
+        ["Design suggestions", "Suggest a luxury Arabic colour palette and menu layout"]
+      ];
+      qs("#ai").innerHTML = `
+        <div class="ai-hero"><div><h2>AI menu assistant</h2><p>Generate professional descriptions, translate menu sections, write promotion copy and produce practical layout suggestions connected to the editor workflow.</p></div><button class="btn gold" id="aiQuick">Use selected menu</button></div>
+        <div class="grid-4">${prompts.map(p=>card(p[0], `<p style="color:var(--muted);line-height:1.5">${p[1]}</p><button class="btn" data-prompt="${p[1]}">Prefill</button>`, "ai-card")).join("")}</div>
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Ask AI assistant</div><div class="panel-sub">Connected to Anthropic through the local server so the API key stays private.</div></div></div>
+          <div class="panel-body"><div class="field"><textarea id="aiPrompt" rows="4" placeholder="Type a menu copywriting request...">${state.aiPrompt}</textarea></div><button class="btn dark" id="runAI">Generate</button><div class="result" id="aiResult" style="margin-top:12px">Choose a feature card or type a request to generate polished menu copy.</div></div>
+        </div>`;
+    }
+
+    function renderExports() {
+      const stages = ["Client trigger", "API route", "Puppeteer render", "Post-process", "Delivery"];
+      const jobs = [
+        ["Al Nakheel Restaurant", "PDF print", "rendering", 64, "A4 · crop marks"],
+        ["Corner Cafe", "Instagram post", "complete", 100, "1080×1350 JPG"],
+        ["Sweet Bites", "WhatsApp catalog", "queued", 22, "800×800 JPG"],
+        ["Aurelius Gold", "CMYK PDF", "blocked", 8, "Agency only"]
+      ];
+      qs("#exports").innerHTML = `
+        <div class="split">
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">PDF generation pipeline</div><div class="panel-sub">Async job architecture from the reference docs</div></div></div>
+            <div class="panel-body">
+              <div class="progress-steps">${stages.map((s,i)=>`<button class="${state.exportStage===i?"active":""}" data-stage="${i}">${i+1}. ${s}</button>`).join("")}</div>
+              <div class="card" style="margin-top:12px">
+                <div class="panel-title">${stages[state.exportStage]}</div>
+                <p style="color:var(--muted);line-height:1.6">${[
+                  "The editor serialises a typed ExportRequest payload, not a DOM snapshot.",
+                  "The API validates auth and plan limits, writes an export_jobs row, then returns 202 with a job ID.",
+                  "A render service opens an internal render URL in headless Chrome and waits for fonts, images and data-render-ready.",
+                  "Post-processing adds crop marks, embeds/subsets fonts, applies free-tier watermarking and routes CMYK work to a container service.",
+                  "Supabase Storage keeps exports private and returns a signed URL through the polling endpoint."
+                ][state.exportStage]}</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Social export formats</div><div class="panel-sub">Sharp-ready dimensions and safe zones</div></div></div>
+            <div class="panel-body">
+              ${[["Instagram post","1080×1350","4:5"],["Instagram story","1080×1920","9:16"],["WhatsApp catalog","800×800","1:1"],["Web banner","1200×400","3:1"]].map(f=>`<div class="row"><span class="badge blue">${f[2]}</span><div><strong>${f[0]}</strong><span>${f[1]} · JPEG/WebP quality tuned</span></div></div>`).join("")}
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Export jobs</div><div class="panel-sub">Backed by export_jobs table and private storage</div></div><button class="btn dark" id="newJob">Start export job</button></div>
+          <div class="panel-body">${jobs.map(j=>`<div class="job-row"><strong>${j[0]}</strong><span>${j[1]}</span><span class="badge ${j[2]==="complete"?"green":j[2]==="blocked"?"red":"blue"}">${j[2]}</span><div class="bar" style="--w:${j[3]}%"><div></div></div><span style="color:var(--muted)">${j[4]}</span></div>`).join("")}</div>
+        </div>`;
+    }
+
+    function renderQR() {
+      qs("#qr").innerHTML = `
+        <div class="split">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">QR code generator</div><div class="panel-sub">Customise scan-ready public menu codes</div></div></div>
+            <div class="panel-body grid-2">
+              <div>
+                <div class="field"><label>Menu URL</label><input value="https://menucraft.pro/menu/al-nakheel"></div>
+                <div class="field"><label>Label above QR</label><input id="qrTop" value="Scan to view our menu"></div>
+                <div class="field"><label>QR colour</label><div class="swatches">${["#17130f","#c8a34a","#2d6a4f","#bd3d30","#1b4166"].map(c=>`<button class="swatch ${state.qrColor===c?"active":""}" data-qr="${c}" style="background:${c}"></button>`).join("")}</div></div>
+                <div class="field"><label>Error correction</label><select><option>H · 30% best for logo</option><option>M · 15%</option><option>L · 7%</option></select></div>
+                <button class="btn dark" id="downloadQR">Download PNG</button>
+              </div>
+              <div style="text-align:center">
+                <div id="qrLabel" style="font-weight:760">Scan to view our menu</div>
+                <div class="qr-demo" style="--qr-color:${state.qrColor}"></div>
+                <div style="color:var(--muted);font-size:12px">Table card · SVG/PDF ready · 189 scans</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Scan analytics</div><div class="panel-sub">Last 7 days</div></div></div><div class="panel-body">${["Monday 31","Tuesday 24","Wednesday 28","Thursday 35","Friday 50","Saturday 41","Sunday 20"].map((x,i)=>{const [d,v]=x.split(" "); return `<div class="row"><strong style="width:90px">${d}</strong><div class="bar" style="--w:${Number(v)*2}%"><div></div></div><span>${v}</span></div>`}).join("")}</div></div>
+        </div>`;
+    }
+
+    function renderPublic() {
+      const items = menuItems.filter(i => !state.publicSearch || i.name.toLowerCase().includes(state.publicSearch.toLowerCase()) || i.desc.toLowerCase().includes(state.publicSearch.toLowerCase()));
+      qs("#public").innerHTML = `
+        <div class="split">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Digital menu · Al Nakheel</div><div class="panel-sub">Owner controls and sharing flow</div></div><span class="badge green">Live</span></div>
+            <div class="panel-body">
+              <div class="field"><label>Public URL</label><input value="menucraft.pro/menu/al-nakheel"></div>
+              ${[["showPhotos","Show food photos"],["showPrices","Show prices"]].map(([k,l])=>`<label class="row" style="justify-content:space-between"><span><strong>${l}</strong><span>Updates customer preview instantly</span></span><input type="checkbox" data-toggle="${k}" ${state[k]?"checked":""}></label>`).join("")}
+              <div class="field"><label>Header colour</label><div class="swatches">${["#17130f","#2d6a4f","#bd3d30","#1b4166","#7d4a26"].map(c=>`<button class="swatch ${state.publicColor===c?"active":""}" data-public-color="${c}" style="background:${c}"></button>`).join("")}</div></div>
+              <div class="grid-3">${["347 views","189 scans","4:12 avg time"].map(x=>card("", `<div class="kpi"><div class="value" style="font-size:20px">${x.split(" ")[0]}</div><div class="label">${x.split(" ").slice(1).join(" ")}</div></div>`)).join("")}</div>
+              <div class="chips" style="margin-top:12px"><button class="btn">WhatsApp</button><button class="btn">Facebook</button><button class="btn">Copy link</button><button class="btn dark">Publish changes</button></div>
+            </div>
+          </div>
+          <div class="phone"><div class="phone-screen">
+            <div class="public-hero" style="--public-color:${state.publicColor}"><h2>Al Nakheel</h2><p>Authentic Arabic Cuisine · Dubai Marina</p><div class="public-contact"><span>Call</span><span>WhatsApp</span><span>Directions</span><span>Website</span></div></div>
+            <div class="public-search"><input id="publicSearch" value="${state.publicSearch}" placeholder="Search menu..."></div>
+            ${items.map(i=>`<div class="public-item">${state.showPhotos?`<div class="thumb ${i.photo}">${i.name[0]}</div>`:""}<div style="flex:1"><strong>${i.name}</strong><p>${i.desc}</p><div class="chips">${i.tags.map(t=>`<span class="badge">${t}</span>`).join("")}</div></div>${state.showPrices?`<strong style="color:#80620f">${state.currency[1]} ${i.price}</strong>`:""}</div>`).join("")}
+          </div></div>
+        </div>`;
+    }
+
+    function renderPhotos() {
+      qs("#photos").innerHTML = `
+        <div class="split">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Add / edit menu item</div><div class="panel-sub">Photo updates live in the preview</div></div></div>
+            <div class="panel-body">
+              <div class="field"><label>Item name</label><input id="photoName" value="Crispy Pata"></div>
+              <div class="grid-2"><div class="field"><label>Price</label><input value="${state.currency[1]} 580"></div><div class="field"><label>Description</label><input value="Deep-fried pork knuckle, liver sauce, pickled papaya"></div></div>
+              <div class="card" style="text-align:center;border-style:dashed;padding:30px"><div style="font-size:38px">▧</div><strong>Drag and drop your food photo here</strong><p style="color:var(--muted)">PNG, JPG, WebP · best results 800×800 or larger</p><button class="btn dark" id="simulateUpload">Browse files</button></div>
+              <div class="section-label">Image display</div><div class="chips">${["Cover","Contain","Stretch","Rounded","Circle","No photo"].map((x,i)=>`<button class="chip ${i===0?"active":""}">${x}</button>`).join("")}</div>
+              <div class="section-label">Item badges</div><div class="chips">${["Bestseller","New","Spicy","Vegan","Halal","Vegetarian"].map((x,i)=>`<button class="chip ${i===1||i===4?"active":""}">${x}</button>`).join("")}</div>
+            </div>
+          </div>
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Live preview</div><div class="panel-sub">Menu item card</div></div><span class="badge green">Live</span></div><div class="panel-body">${row({name:"Crispy Pata",desc:"Deep-fried pork knuckle, liver sauce, pickled papaya",price:580,photo:"food-1"})}${row(menuItems[3])}${row(menuItems[0])}<div class="card" style="margin-top:12px"><strong>Photo tips</strong><p style="color:var(--muted);line-height:1.55">Use natural light, crop square, and keep the hero dish centered. The production app should optimise uploads through Supabase Storage and image transforms.</p></div></div></div>
+        </div>`;
+    }
+
+    function price(v, idx) {
+      const n = state.currency[3][idx] ?? v;
+      return `${state.currency[1]} ${Number(n).toLocaleString(undefined,{minimumFractionDigits:state.decimals,maximumFractionDigits:state.decimals})}`;
+    }
+
+    function renderCurrency() {
+      qs("#currency").innerHTML = `
+        <div class="split">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Select currency</div><div class="panel-sub">Regional menu pricing display</div></div><button class="btn dark" id="saveCurrency">Save</button></div>
+            <div class="currency-list">${currencies.map(c=>`<div class="currency-row ${state.currency[0]===c[0]?"active":""}" data-currency="${c[0]}"><span>${c[1]}</span><div><strong>${c[2]}</strong><span style="display:block;color:var(--muted);font-size:11px">${c[0]}</span></div><span>✓</span></div>`).join("")}</div>
+          </div>
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Live menu preview</div><div class="panel-sub">Prices update instantly</div></div><span class="badge green">${state.currency[0]} · ${state.currency[1]}</span></div>
+            <div class="panel-body">
+              ${menuItems.map((i,idx)=>`<div class="row"><div class="thumb ${i.photo}">${i.name[0]}</div><div><strong>${i.name}</strong><span>${i.desc}</span></div><strong style="color:#80620f;margin-left:auto">${price(i.price,idx)}</strong></div>`).join("")}
+              <div class="panel" style="margin-top:12px"><div class="panel-body"><div class="chips"><button class="chip active">Symbol before</button><button class="chip">Symbol after</button><button class="chip" id="decimals">Decimals: ${state.decimals}</button></div></div></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderAdmin() {
+      const users = [
+        ["Rashed Khalid","Free","UAE","Active"],["Maria Reyes","Pro","Philippines","Active"],["Ahmed Al-Sayed","Pro","UAE","Active"],["Priya Krishnan","Pro","India","Inactive"],["Juan Tamayo","Agency","Colombia","Active"]
+      ].filter(u => state.adminFilter === "All" || u[1] === state.adminFilter);
+      qs("#admin").innerHTML = `
+        <div class="grid-4">${[["2,841","Total users"],["487","Pro subscribers"],["$4,821","MRR"],["7","Open tickets"]].map(k=>card("",`<div class="kpi"><div class="value">${k[0]}</div><div class="label">${k[1]}</div></div>`)).join("")}</div>
+        <div class="grid-2" style="margin-top:12px">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Revenue analytics</div><div class="panel-sub">Last 12 months · plan and currency mix</div></div><span class="badge green">+9.1%</span></div>
+            <div class="panel-body">
+              <div style="height:120px;display:flex;align-items:flex-end;gap:5px">
+                ${[35,41,46,52,58,63,67,74,79,85,90,100].map((v,i)=>`<div style="flex:1;display:grid;gap:5px;text-align:center"><div style="height:${v}px;background:${i===11?"var(--gold)":"#ded5c5"};border-radius:3px 3px 0 0"></div><span style="font-size:9px;color:var(--muted)">${["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"][i]}</span></div>`).join("")}
+              </div>
+              <div class="grid-3" style="margin-top:12px">
+                ${[["Pro Monthly","$2,441"],["Pro Annual","$1,735"],["Agency","$928"]].map(x=>`<div class="card" style="padding:10px"><strong>${x[1]}</strong><span style="display:block;color:var(--muted);font-size:11px;margin-top:2px">${x[0]}</span></div>`).join("")}
+              </div>
+            </div>
+          </div>
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Audit log</div><div class="panel-sub">Recent admin and customer events</div></div><button class="btn">Export log</button></div>
+            <div class="panel-body">
+              ${[
+                ["create","Maria Reyes created The Corner Cafe Menu v2","2 min ago"],
+                ["update","Feature flag bulk_import enabled for Pro","15 min ago"],
+                ["login","Ahmed Al-Sayed signed in from Dubai","1h ago"],
+                ["delete","Admin deleted a spam account","3h ago"]
+              ].map(a=>`<div class="row"><span class="badge ${a[0]==="delete"?"red":a[0]==="update"?"blue":"green"}">${a[0]}</span><div><strong>${a[1]}</strong><span>${a[2]} · IP logged</span></div></div>`).join("")}
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Users and subscriptions</div><div class="panel-sub">Admin table with plan filtering</div></div><div class="chips">${["All","Free","Pro","Agency"].map(f=>`<button class="chip ${state.adminFilter===f?"active":""}" data-admin-filter="${f}">${f}</button>`).join("")}</div></div>
+          <table><thead><tr><th>User</th><th>Plan</th><th>Country</th><th>Status</th><th>Actions</th></tr></thead><tbody>${users.map(u=>`<tr><td><strong>${u[0]}</strong></td><td><span class="badge ${u[1]==="Pro"?"green":u[1]==="Agency"?"blue":""}">${u[1]}</span></td><td>${u[2]}</td><td>${u[3]}</td><td><button class="btn">View</button></td></tr>`).join("")}</tbody></table>
+        </div>
+        <div class="grid-2" style="margin-top:12px">${["AI menu translation","Social media exports","CMYK PDF export","Custom domain"].map((f,i)=>card(f,`<p style="color:var(--muted)">Feature flag ${i<2?"enabled for Pro":"Agency gated"}</p><button class="btn">${i<2?"Disable":"Configure"}</button>`)).join("")}</div>`;
+    }
+
+    function renderPricing() {
+      const plans = [
+        ["Free","$0","3 menus","Watermarked exports","Basic templates"],
+        ["Pro","$9","Unlimited menus","PDF and social exports","AI assistant","QR analytics"],
+        ["Agency","$29","Team workspaces","CMYK print pipeline","Custom domain","Priority support"]
+      ];
+      qs("#pricing").innerHTML = `<div class="grid-3 pricing">${plans.map((p,i)=>`<div class="card price-card" style="${i===1?"border-color:var(--gold);box-shadow:var(--shadow)":""}"><div><div class="panel-title">${p[0]}</div><div class="price">${p[1]} <small>/mo</small></div></div><div class="features">${p.slice(2).map(x=>`<span>✓ ${x}</span>`).join("")}</div><button class="btn ${i===1?"dark":""}" style="margin-top:auto">${i===0?"Start free":i===1?"Upgrade to Pro":"Contact sales"}</button></div>`).join("")}</div>
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Design reference</div><div class="panel-sub">Generated concept used to guide this build</div></div></div><div class="panel-body"><img class="concept-img" src="assets/menucraft-concept.png" alt="MenuCraft Pro generated dashboard concept"></div></div>`;
+    }
+
+    function renderAll() {
+      renderNav();
+      renderDashboard();
+      renderTemplates();
+      renderEditor();
+      renderAI();
+      renderExports();
+      renderQR();
+      renderPublic();
+      renderPhotos();
+      renderCurrency();
+      renderAdmin();
+      renderPricing();
+      bind();
+    }
+
+    function bind() {
+      qsa("[data-screen]").forEach(el => el.onclick = () => setScreen(el.dataset.screen));
+      qsa("[data-filter]").forEach(el => el.onclick = () => { state.templateFilter = el.dataset.filter; renderTemplates(); bind(); });
+      qsa("[data-template]").forEach(el => el.onclick = () => { state.restaurant = el.dataset.template; renderEditor(); bind(); setScreen("editor"); toast(`${state.restaurant} template loaded`); });
+      qsa("[data-color]").forEach(el => el.onclick = () => { state.menuColor = el.dataset.color; renderEditor(); bind(); });
+      const rn = qs("#restaurantName");
+      if (rn) rn.oninput = e => { state.restaurant = e.target.value; renderEditor(); bind(); };
+      const rt = qs("#restaurantTagline");
+      if (rt) rt.oninput = e => { state.tagline = e.target.value; renderEditor(); bind(); };
+      qsa("[data-export]").forEach(el => el.onclick = () => { setScreen("exports"); toast(`${el.dataset.export} export job queued`); });
+      qsa("[data-prompt]").forEach(el => el.onclick = () => { state.aiPrompt = el.dataset.prompt; renderAI(); bind(); });
+      const aiRun = qs("#runAI");
+      if (aiRun) aiRun.onclick = async () => {
+        const prompt = qs("#aiPrompt").value.trim();
+        state.aiPrompt = prompt;
+        const result = qs("#aiResult");
+        if (!prompt) {
+          result.textContent = "Type a request first.";
+          return;
+        }
+        result.textContent = "Generating with Anthropic...";
+        try {
+          const response = await fetch("/api/ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "AI request failed");
+          result.textContent = data.text;
+        } catch (error) {
+          result.textContent = `AI unavailable: ${error.message}. Start the local server with "node server.mjs" and make sure ANTHROPIC_API_KEY is set in .env.`;
+        }
+      };
+      qsa("[data-stage]").forEach(el => el.onclick = () => { state.exportStage = Number(el.dataset.stage); renderExports(); bind(); });
+      const newJob = qs("#newJob");
+      if (newJob) newJob.onclick = () => toast("New async export job created with status: queued");
+      qsa("[data-qr]").forEach(el => el.onclick = () => { state.qrColor = el.dataset.qr; renderQR(); bind(); });
+      const qrTop = qs("#qrTop");
+      if (qrTop) qrTop.oninput = e => { const label = qs("#qrLabel"); if (label) label.textContent = e.target.value; };
+      const dl = qs("#downloadQR");
+      if (dl) dl.onclick = () => toast("QR PNG download simulated");
+      qsa("[data-public-color]").forEach(el => el.onclick = () => { state.publicColor = el.dataset.publicColor; renderPublic(); bind(); });
+      qsa("[data-toggle]").forEach(el => el.onchange = e => { state[e.target.dataset.toggle] = e.target.checked; renderPublic(); bind(); });
+      const ps = qs("#publicSearch");
+      if (ps) ps.oninput = e => { state.publicSearch = e.target.value; renderPublic(); bind(); qs("#publicSearch")?.focus(); };
+      const up = qs("#simulateUpload");
+      if (up) up.onclick = () => toast("Food photo uploaded and optimised");
+      qsa("[data-currency]").forEach(el => el.onclick = () => { state.currency = currencies.find(c => c[0] === el.dataset.currency); renderCurrency(); renderEditor(); renderPublic(); bind(); });
+      const dec = qs("#decimals");
+      if (dec) dec.onclick = () => { state.decimals = (state.decimals + 1) % 3; renderCurrency(); bind(); };
+      const saveC = qs("#saveCurrency");
+      if (saveC) saveC.onclick = () => toast(`Currency saved: ${state.currency[0]}`);
+      qsa("[data-admin-filter]").forEach(el => el.onclick = () => { state.adminFilter = el.dataset.adminFilter; renderAdmin(); bind(); });
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
