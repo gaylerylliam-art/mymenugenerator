@@ -423,6 +423,32 @@
     .public-item { display: flex; gap: 9px; margin: 8px 11px; padding: 9px; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
     .public-item strong { font-size: 12px; }
     .public-item p { font-size: 10px; color: var(--muted); margin: 3px 0; }
+    .public-control-shell { display: grid; grid-template-columns: minmax(360px, 1fr) minmax(320px, .9fr); gap: 18px; align-items: start; }
+    .public-url-row { display: grid; grid-template-columns: 1fr 42px; gap: 8px; align-items: center; background: #f7f2e9; border: 1px solid var(--line); border-radius: 8px; padding: 9px; }
+    .public-url-row code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+    .owner-toggle { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .owner-toggle:last-child { border-bottom: 0; }
+    .owner-toggle strong { display: block; font-size: 12px; }
+    .owner-toggle span { display: block; color: var(--muted); font-size: 10px; margin-top: 2px; }
+    .phone-head { min-height: 128px; background: var(--public-color,#17130f); color: #fffaf0; padding: 20px 14px 14px; }
+    .phone-logo { width: 36px; height: 36px; border-radius: 10px; background: #fffaf0; color: var(--public-color,#17130f); display: grid; place-items: center; font-weight: 900; margin-bottom: 10px; }
+    .phone-head h2 { margin: 0; color: #fffaf0; font-size: 22px; font-family: Georgia, serif; }
+    .phone-head p { margin: 4px 0 12px; color: rgba(255,250,240,.72); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; line-height: 1.4; }
+    .phone-contact { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; }
+    .phone-contact button { border: 0; border-radius: 7px; background: rgba(255,250,240,.13); color: #fffaf0; padding: 7px 2px; font-size: 9px; }
+    .phone-category-strip { display: flex; gap: 6px; overflow-x: auto; padding: 10px 10px 6px; background: #fffaf0; }
+    .phone-category-strip button { flex: none; border: 1px solid var(--line); border-radius: 999px; background: #fff; padding: 6px 10px; color: var(--ink-2); font-size: 10px; font-weight: 700; }
+    .phone-category-strip button.active { background: var(--public-color,#17130f); color: #fffaf0; border-color: var(--public-color,#17130f); }
+    .phone-section-title { margin: 12px 12px 4px; color: var(--ink); font-size: 12px; font-weight: 850; }
+    .phone-food { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; margin: 8px 10px; padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 9px; align-items: start; }
+    .phone-food.no-photo { grid-template-columns: 1fr auto; }
+    .phone-food p { margin: 3px 0 5px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .phone-food-price { color: #80620f; font-weight: 850; font-size: 12px; white-space: nowrap; }
+    .phone-thumb { width: 50px; height: 50px; border-radius: 8px; background: #eee7da; display: grid; place-items: center; color: var(--public-color,#17130f); font-weight: 900; }
+    .phone-footer { text-align: center; color: var(--muted); padding: 14px 10px 18px; font-size: 9px; }
+    .share-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+    .status-off { filter: grayscale(1); opacity: .62; }
+    @media (max-width: 980px) { .public-control-shell { grid-template-columns: 1fr; } }
 
     .qr-live-card {
       width: min(100%, 410px);
@@ -612,8 +638,14 @@
       publicColor: "#17130f",
       showPhotos: true,
       showPrices: true,
+      allowSearch: true,
+      showContact: true,
+      publicLive: true,
+      publicRestaurant: "Kusina ni Lola",
+      publicTagline: "Authentic Filipino Cuisine · Manila",
+      publicCategory: "All",
       publicSearch: "",
-      currency: currencies[0],
+      currency: currencies[2],
       decimals: 0,
       adminFilter: "All",
       adminSection: "overview",
@@ -978,7 +1010,7 @@
       requestAnimationFrame(drawQrCode);
     }
 
-    function renderPublic() {
+    function renderPublicOld() {
       const items = menuItems.filter(i => !state.publicSearch || i.name.toLowerCase().includes(state.publicSearch.toLowerCase()) || i.desc.toLowerCase().includes(state.publicSearch.toLowerCase()));
       qs("#public").innerHTML = `
         <div class="split">
@@ -996,6 +1028,87 @@
             <div class="public-search"><input id="publicSearch" value="${state.publicSearch}" placeholder="Search menu..."></div>
             ${items.map(i=>`<div class="public-item">${state.showPhotos?`<div class="thumb ${i.photo}">${i.name[0]}</div>`:""}<div style="flex:1"><strong>${i.name}</strong><p>${i.desc}</p><div class="chips">${i.tags.map(t=>`<span class="badge">${t}</span>`).join("")}</div></div>${state.showPrices?`<strong style="color:#80620f">${state.currency[1]} ${i.price}</strong>`:""}</div>`).join("")}
           </div></div>
+        </div>`;
+    }
+
+    function renderPublic() {
+      const publicUrl = "menucraft.pro/menu/kusina-ni-lola";
+      const publicItems = [
+        { name: "Lumpiang Shanghai", desc: "Crispy pork spring rolls with sweet chili sawsawan", price: 95, cat: "Starters", tags: ["Bestseller", "Halal"], photo: "food-1" },
+        { name: "Tokwa't Baboy", desc: "Tofu, tender pork, onions and soy-vinegar dressing", price: 120, cat: "Starters", tags: ["New"], photo: "food-2" },
+        { name: "Chicken Adobo", desc: "Soy-vinegar braised chicken, garlic rice and pickled papaya", price: 180, cat: "Mains", tags: ["Bestseller", "Halal"], photo: "food-3" },
+        { name: "Kare-Kare Gulay", desc: "Peanut stew with vegetables, banana blossom and bagoong", price: 210, cat: "Mains", tags: ["Vegan"], photo: "food-4" },
+        { name: "Buko Pandan", desc: "Refreshing young coconut strips with pandan jelly and cream", price: 95, cat: "Drinks", tags: ["New"], photo: "food-5" },
+        { name: "Sago at Gulaman", desc: "Brown sugar syrup drink with tapioca pearls and jelly", price: 75, cat: "Drinks", tags: ["Vegan"], photo: "food-2" },
+        { name: "Halo-Halo", desc: "Classic shaved ice dessert with ube, leche flan and sweet beans", price: 130, cat: "Desserts", tags: ["Bestseller"], photo: "food-3" },
+        { name: "Bibingka", desc: "Traditional rice cake topped with salted egg and coconut", price: 95, cat: "Desserts", tags: ["New"], photo: "food-4" }
+      ];
+      const categories = ["All", "Starters", "Mains", "Drinks", "Desserts"];
+      const colors = ["#17130f", "#2d6a4f", "#bd3d30", "#1b4166", "#7d4a26", "#4c1d5f", "#2b2b2b"];
+      const currencyOptions = [
+        ["PHP", "\u20b1", 1, "Philippine Peso"],
+        ["USD", "$", 0.017, "US Dollar"],
+        ["AED", "AED", 0.063, "UAE Dirham"],
+        ["SGD", "S$", 0.023, "Singapore Dollar"],
+        ["JPY", "\u00a5", 2.66, "Japanese Yen"],
+        ["THB", "\u0e3f", 0.61, "Thai Baht"],
+        ["IDR", "Rp", 276, "Indonesian Rupiah"],
+        ["EUR", "\u20ac", 0.016, "Euro"]
+      ];
+      const activeCurrency = currencyOptions.find(c => c[0] === state.currency[0]) || currencyOptions[0];
+      const money = (php) => {
+        const value = php * activeCurrency[2];
+        const whole = ["PHP", "JPY", "THB", "IDR"].includes(activeCurrency[0]);
+        return `${activeCurrency[1]} ${whole ? Math.round(value).toLocaleString() : value.toFixed(2).replace(/\.00$/, "")}`;
+      };
+      const search = state.allowSearch ? state.publicSearch.toLowerCase() : "";
+      const filtered = publicItems.filter(i => (state.publicCategory === "All" || i.cat === state.publicCategory) && (!search || i.name.toLowerCase().includes(search) || i.desc.toLowerCase().includes(search)));
+      const grouped = categories.slice(1).map(cat => {
+        const inCat = filtered.filter(i => i.cat === cat);
+        if (!inCat.length) return "";
+        return `<div class="phone-section-title">${cat}</div>${inCat.map(i=>`
+          <div class="phone-food ${state.showPhotos ? "" : "no-photo"}">
+            ${state.showPhotos ? `<div class="phone-thumb">${i.name[0]}</div>` : ""}
+            <div><strong>${i.name}</strong><p>${i.desc}</p><div class="chips">${i.tags.map(t=>`<span class="badge ${t==="Vegan"?"green":t==="Halal"?"blue":t==="Spicy"?"red":""}">${t}</span>`).join("")}</div></div>
+            ${state.showPrices ? `<div class="phone-food-price">${money(i.price)}</div>` : ""}
+          </div>`).join("")}`;
+      }).join("");
+      const toggles = [
+        ["publicLive", "Menu is live", "Customers can view this page"],
+        ["showPhotos", "Show food photos", "Display item images on digital menu"],
+        ["showPrices", "Show prices", "Hide prices for QR-only menus"],
+        ["allowSearch", "Allow search", "Show search bar on menu page"],
+        ["showContact", "Show contact buttons", "Call, WhatsApp, directions"]
+      ];
+      qs("#public").innerHTML = `
+        <div class="public-control-shell">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Digital menu · ${state.publicRestaurant}</div><div class="panel-sub">Public URL - customers scan your QR code and land here</div></div><span class="badge ${state.publicLive?"green":"red"}">${state.publicLive?"Live":"Unpublished"}</span></div>
+            <div class="panel-body">
+              <div class="field"><label>Public URL</label><div class="public-url-row"><code>${publicUrl}</code><button class="btn icon" id="copyPublicUrl" title="Copy public link">Copy</button></div></div>
+              ${toggles.map(([k,l,d])=>`<label class="owner-toggle"><span><strong>${l}</strong><span>${d}</span></span><input type="checkbox" data-public-toggle="${k}" ${state[k]?"checked":""}></label>`).join("")}
+              <div class="section-label">Customise</div>
+              <div class="field"><label>Restaurant name</label><input id="publicRestaurantName" value="${state.publicRestaurant}"></div>
+              <div class="field"><label>Tagline</label><input id="publicTagline" value="${state.publicTagline}"></div>
+              <div class="field"><label>Header colour</label><div class="swatches">${colors.map(c=>`<button class="swatch ${state.publicColor===c?"active":""}" data-public-color="${c}" style="background:${c}"></button>`).join("")}</div></div>
+              <div class="field"><label>Currency</label><select id="publicCurrency">${currencyOptions.map(c=>`<option value="${c[0]}" ${activeCurrency[0]===c[0]?"selected":""}>${c[1]} ${c[3]} (${c[0]})</option>`).join("")}</select></div>
+              <div class="section-label">Analytics (last 30 days)</div>
+              <div class="grid-3">${[["347","Page views"],["189","QR scans"],["4:12","Avg. time"]].map(x=>card("",`<div class="kpi"><div class="value" style="font-size:20px">${state.publicLive?x[0]:"-"}</div><div class="label">${x[1]}</div></div>`)).join("")}</div>
+              <div class="section-label">Share</div>
+              <div class="share-grid"><button class="btn" data-share="WhatsApp">WhatsApp</button><button class="btn" data-share="Facebook">Facebook</button><button class="btn" data-share="Instagram">Instagram</button><button class="btn" data-share="Copy">Copy</button></div>
+              <button class="btn ${state.publicLive?"dark":""}" style="width:100%;margin-top:12px" id="publishPublic">${state.publicLive?"Menu is live":"Unpublished"}</button>
+            </div>
+          </div>
+          <div style="text-align:center">
+            <div class="badge" style="margin-bottom:8px">${state.publicLive ? "Customer view" : "Customer view paused"}</div>
+            <div class="phone ${state.publicLive ? "" : "status-off"}"><div class="phone-screen">
+              <div class="phone-head" style="--public-color:${state.publicColor}"><div class="phone-logo">KL</div><h2>${state.publicRestaurant}</h2><p>${state.publicTagline}</p>${state.showContact?`<div class="phone-contact"><button>Call</button><button>WhatsApp</button><button>Directions</button><button>Website</button></div>`:""}</div>
+              ${state.allowSearch?`<div class="public-search"><input id="publicSearch" value="${state.publicSearch}" placeholder="Search menu..."></div>`:""}
+              <div class="phone-category-strip">${categories.map(c=>`<button class="${state.publicCategory===c?"active":""}" data-public-category="${c}">${c}</button>`).join("")}</div>
+              ${grouped || `<div class="card" style="margin:12px;text-align:center;color:var(--muted)">No menu items match this search.</div>`}
+              <div class="phone-footer">MenuCraft Pro<br>Digital menu powered by MenuCraft Pro · Create yours free</div>
+            </div></div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:10px">menucraft.pro/menu/kusina-ni-lola</div>
+          </div>
         </div>`;
     }
 
@@ -1379,6 +1492,28 @@
       const dlPdf = qs("#downloadQRPDF");
       if (dlPdf) dlPdf.onclick = () => toast(`${state.qrTemplate} PDF download simulated`);
       qsa("[data-public-color]").forEach(el => el.onclick = () => { state.publicColor = el.dataset.publicColor; renderPublic(); bind(); });
+      qsa("[data-public-toggle]").forEach(el => el.onchange = e => { state[e.target.dataset.publicToggle] = e.target.checked; renderPublic(); bind(); });
+      qsa("[data-public-category]").forEach(el => el.onclick = () => { state.publicCategory = el.dataset.publicCategory; renderPublic(); bind(); });
+      const publicName = qs("#publicRestaurantName");
+      if (publicName) publicName.oninput = e => { state.publicRestaurant = e.target.value; renderPublic(); bind(); qs("#publicRestaurantName")?.focus(); };
+      const publicTagline = qs("#publicTagline");
+      if (publicTagline) publicTagline.oninput = e => { state.publicTagline = e.target.value; renderPublic(); bind(); qs("#publicTagline")?.focus(); };
+      const publicCurrency = qs("#publicCurrency");
+      if (publicCurrency) publicCurrency.onchange = e => {
+        const local = currencies.find(c => c[0] === e.target.value);
+        const fallbacks = { IDR: ["IDR", "Rp", "Indonesia", []], THB: ["THB", "THB", "Thailand", []], JPY: ["JPY", "JPY", "Japan", []], EUR: ["EUR", "EUR", "Euro", []] };
+        state.currency = local || fallbacks[e.target.value] || currencies[0];
+        renderPublic();
+        bind();
+      };
+      const copyPublicUrl = qs("#copyPublicUrl");
+      if (copyPublicUrl) copyPublicUrl.onclick = async () => {
+        try { await navigator.clipboard.writeText("https://menucraft.pro/menu/kusina-ni-lola"); toast("Public menu link copied"); }
+        catch { toast("Public menu link copied"); }
+      };
+      qsa("[data-share]").forEach(el => el.onclick = () => toast(`${el.dataset.share} share link ready: menucraft.pro/menu/kusina-ni-lola`));
+      const publishPublic = qs("#publishPublic");
+      if (publishPublic) publishPublic.onclick = () => { state.publicLive = !state.publicLive; renderPublic(); bind(); };
       qsa("[data-toggle]").forEach(el => el.onchange = e => { state[e.target.dataset.toggle] = e.target.checked; renderPublic(); bind(); });
       const ps = qs("#publicSearch");
       if (ps) ps.oninput = e => { state.publicSearch = e.target.value; renderPublic(); bind(); qs("#publicSearch")?.focus(); };
