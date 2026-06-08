@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+
+*.log
+*.tmp
+.tmp-*
+.server-*.txt
+
+Thumbs.db
+.DS_Store
