@@ -450,6 +450,34 @@
     .status-off { filter: grayscale(1); opacity: .62; }
     @media (max-width: 980px) { .public-control-shell { grid-template-columns: 1fr; } }
 
+    .photo-shell { display: grid; grid-template-columns: minmax(360px, .95fr) minmax(360px, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); }
+    .photo-editor { border-right: 1px solid var(--line); background: #fffdf8; }
+    .photo-tabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .photo-tabs .btn.active, .seg-btn.active { background: #e7f0ff; border-color: #8bb8ff; color: #155eab; }
+    .upload-zone { min-height: 170px; border: 1px dashed #b9b1a5; border-radius: 8px; background: #f8f5ee; display: grid; place-items: center; text-align: center; padding: 16px; position: relative; overflow: hidden; }
+    .upload-zone.dragging { border-color: var(--gold); background: #fff6d9; }
+    .upload-zone img { width: 100%; height: 170px; object-fit: cover; border-radius: 7px; display: block; }
+    .photo-overlay { position: absolute; inset: 0; background: rgba(23,19,15,.58); color: #fffaf0; display: none; place-items: center; gap: 8px; }
+    .upload-zone.has-image:hover .photo-overlay { display: grid; }
+    .upload-progress { height: 7px; border-radius: 999px; background: #e6dfd4; overflow: hidden; margin-top: 10px; }
+    .upload-progress div { height: 100%; width: var(--w,0%); background: var(--green); border-radius: inherit; }
+    .stock-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .stock-tile { min-height: 62px; border-radius: 8px; border: 1px solid var(--line); color: #fff; font-weight: 850; display: grid; place-items: end start; padding: 9px; text-align: left; overflow: hidden; }
+    .stock-tile.active { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .photo-menu-preview { background: #f4f1e9; min-height: 100%; }
+    .photo-preview-hero { background: #17130f; color: #fff3db; padding: 16px 20px; }
+    .photo-preview-hero strong { color: var(--gold); }
+    .photo-preview-section { color: #80620f; text-align: center; font-size: 11px; font-weight: 850; margin: 14px 0 8px; text-transform: uppercase; letter-spacing: .08em; }
+    .photo-preview-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; margin: 8px 18px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; opacity: .58; }
+    .photo-preview-item.editing { border: 2px solid var(--green); background: #eef8e8; opacity: 1; }
+    .photo-preview-item.no-photo { grid-template-columns: 1fr auto; }
+    .photo-preview-thumb { width: var(--photo-size,60px); height: var(--photo-size,60px); border-radius: var(--photo-radius,8px); background: #f2eee5; overflow: hidden; display: grid; place-items: center; color: var(--muted); font-weight: 900; flex: none; }
+    .photo-preview-thumb img { width: 100%; height: 100%; object-fit: var(--photo-fit,cover); display: block; }
+    .photo-preview-item h4 { margin: 0; font-size: 13px; }
+    .photo-preview-item p { margin: 3px 0 6px; color: var(--ink-2); font-size: 11px; line-height: 1.35; }
+    .photo-tips { margin: 14px 18px; }
+    @media (max-width: 980px) { .photo-shell { grid-template-columns: 1fr; } .photo-editor { border-right: 0; border-bottom: 1px solid var(--line); } }
+
     .qr-live-card {
       width: min(100%, 410px);
       margin: 0 auto;
@@ -645,6 +673,18 @@
       publicTagline: "Authentic Filipino Cuisine · Manila",
       publicCategory: "All",
       publicSearch: "",
+      photoSource: "Upload",
+      photoName: "Crispy Pata",
+      photoDesc: "Deep-fried pork knuckle, liver sauce, pickled papaya",
+      photoPrice: 580,
+      photoImage: "",
+      photoStock: "none",
+      photoFit: "Cover",
+      photoCorner: "Subtle",
+      photoSize: "Medium",
+      photoBadges: new Set(["New", "Halal"]),
+      photoUploadProgress: 0,
+      photoUrl: "",
       currency: currencies[2],
       decimals: 0,
       adminFilter: "All",
@@ -1112,7 +1152,7 @@
         </div>`;
     }
 
-    function renderPhotos() {
+    function renderPhotosOld() {
       qs("#photos").innerHTML = `
         <div class="split">
           <div class="panel"><div class="panel-head"><div><div class="panel-title">Add / edit menu item</div><div class="panel-sub">Photo updates live in the preview</div></div></div>
@@ -1125,6 +1165,87 @@
             </div>
           </div>
           <div class="panel"><div class="panel-head"><div><div class="panel-title">Live preview</div><div class="panel-sub">Menu item card</div></div><span class="badge green">Live</span></div><div class="panel-body">${row({name:"Crispy Pata",desc:"Deep-fried pork knuckle, liver sauce, pickled papaya",price:580,photo:"food-1"})}${row(menuItems[3])}${row(menuItems[0])}<div class="card" style="margin-top:12px"><strong>Photo tips</strong><p style="color:var(--muted);line-height:1.55">Use natural light, crop square, and keep the hero dish centered. The production app should optimise uploads through Supabase Storage and image transforms.</p></div></div></div>
+        </div>`;
+    }
+
+    function renderPhotos() {
+      const sourceTabs = ["Upload", "From URL", "Stock photos"];
+      const fits = ["Cover", "Contain", "Stretch"];
+      const corners = [["Subtle","8px"],["Rounded","16px"],["Circle","999px"],["Square","0"]];
+      const sizes = [["Small","44px"],["Medium","60px"],["Large","80px"],["No photo","0"]];
+      const badges = ["Bestseller", "New", "Spicy", "Vegan", "Halal", "Vegetarian"];
+      const stock = [
+        ["crispy-pata", "Crispy pata", "linear-gradient(135deg,#7d4a26,#f4c27a)"],
+        ["kare-kare", "Kare-Kare", "linear-gradient(135deg,#b8860b,#f5e4a3)"],
+        ["sinigang", "Sinigang", "linear-gradient(135deg,#2d6a4f,#9bd6a8)"],
+        ["halo-halo", "Halo-Halo", "linear-gradient(135deg,#6d4aff,#f3b2d8)"],
+        ["adobo", "Adobo", "linear-gradient(135deg,#17130f,#8a6a4f)"],
+        ["pancit", "Pancit", "linear-gradient(135deg,#bd3d30,#f0b35a)"]
+      ];
+      const image = state.photoImage || (state.photoStock !== "none" ? stock.find(s => s[0] === state.photoStock)?.[2] : "");
+      const fit = state.photoFit === "Contain" ? "contain" : state.photoFit === "Stretch" ? "fill" : "cover";
+      const radius = corners.find(c => c[0] === state.photoCorner)?.[1] || "8px";
+      const size = sizes.find(s => s[0] === state.photoSize)?.[1] || "60px";
+      const showPhoto = state.photoSize !== "No photo";
+      const renderThumb = (label, active = false) => {
+        if (!showPhoto) return "";
+        if (active && state.photoImage) return `<div class="photo-preview-thumb" style="--photo-size:${size};--photo-radius:${radius};--photo-fit:${fit}"><img src="${state.photoImage}" alt="${state.photoName}"></div>`;
+        const bg = active && state.photoStock !== "none" ? stock.find(s => s[0] === state.photoStock)?.[2] : "#f2eee5";
+        return `<div class="photo-preview-thumb" style="--photo-size:${size};--photo-radius:${radius};background:${bg}">${label}</div>`;
+      };
+      const activeBadges = [...state.photoBadges];
+      qs("#photos").innerHTML = `
+        <div class="photo-shell">
+          <div class="photo-editor">
+            <div class="panel-head"><div><div class="panel-title">Add / edit menu item</div><div class="panel-sub">Photo updates live in the preview</div></div></div>
+            <div class="panel-body">
+              <div class="section-label">Item details</div>
+              <div class="field"><label>Item name</label><input id="photoName" value="${state.photoName}"></div>
+              <div class="grid-2"><div class="field"><label>Price</label><input id="photoPrice" value="${state.photoPrice}"></div><div class="field"><label>Description</label><input id="photoDesc" value="${state.photoDesc}"></div></div>
+              <div class="section-label">Food photo</div>
+              <div class="photo-tabs">${sourceTabs.map(t=>`<button class="btn ${state.photoSource===t?"active":""}" data-photo-source="${t}">${t}</button>`).join("")}</div>
+              ${state.photoSource === "Upload" ? `
+                <div class="upload-zone ${state.photoImage?"has-image":""}" id="photoDropZone" style="margin-top:10px">
+                  ${state.photoImage ? `<img src="${state.photoImage}" alt="${state.photoName}"><div class="photo-overlay"><div class="chips"><button class="btn dark" id="replacePhoto">Replace</button><button class="btn" id="removePhoto">Remove</button></div></div>` : `<div><div style="font-size:32px;color:var(--muted)">Upload</div><strong>Drag and drop your food photo here</strong><p style="color:var(--muted);font-size:11px;line-height:1.5">PNG, JPG, WebP - max 10 MB<br>Best results: 800x800px or larger, good lighting</p><button class="btn dark" id="simulateUpload">Browse files</button></div>`}
+                </div>
+                <input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" hidden>
+                ${state.photoUploadProgress > 0 && state.photoUploadProgress < 100 ? `<div class="upload-progress" style="--w:${state.photoUploadProgress}%"><div></div></div>` : ""}
+              ` : ""}
+              ${state.photoSource === "From URL" ? `
+                <div class="field" style="margin-top:10px"><label>Image URL</label><input id="photoUrl" value="${state.photoUrl}" placeholder="https://example.com/food.jpg"></div>
+                <button class="btn dark" style="width:100%" id="loadPhotoUrl">Load image</button>
+                <p style="color:var(--muted);font-size:11px;line-height:1.5">Works with Google Drive, Dropbox, Imgur, or any direct .jpg/.png/.webp URL.</p>
+              ` : ""}
+              ${state.photoSource === "Stock photos" ? `
+                <div class="stock-grid" style="margin-top:10px">${stock.map(s=>`<button class="stock-tile ${state.photoStock===s[0]?"active":""}" data-stock-photo="${s[0]}" style="background:${s[2]}"><span>${s[1]}</span></button>`).join("")}</div>
+                <p style="color:var(--muted);font-size:11px">Pro users can search 10,000+ real food photos from the stock library.</p>
+              ` : ""}
+              <div class="section-label">Image display</div>
+              <div class="chips">${fits.map(f=>`<button class="chip seg-btn ${state.photoFit===f?"active":""}" data-photo-fit="${f}">${f}</button>`).join("")}</div>
+              <div class="section-label">Corner style</div>
+              <div class="chips">${corners.map(c=>`<button class="chip seg-btn ${state.photoCorner===c[0]?"active":""}" data-photo-corner="${c[0]}">${c[0]}</button>`).join("")}</div>
+              <div class="section-label">Photo size in menu</div>
+              <div class="chips">${sizes.map(s=>`<button class="chip seg-btn ${state.photoSize===s[0]?"active":""}" data-photo-size="${s[0]}">${s[0]}</button>`).join("")}</div>
+              <div class="section-label">Item badges</div>
+              <div class="chips">${badges.map(b=>`<button class="chip ${state.photoBadges.has(b)?"active":""}" data-photo-badge="${b}">${b}</button>`).join("")}</div>
+              <div class="chips" style="margin-top:18px"><button class="btn">Cancel</button><button class="btn dark" style="flex:1" id="savePhotoItem">Save item</button></div>
+            </div>
+          </div>
+          <div class="photo-menu-preview">
+            <div class="panel-head"><div><div class="panel-title">Live preview</div><div class="panel-sub">Updates as you edit</div></div><span class="badge green">Live</span></div>
+            <div class="photo-preview-hero"><strong>Kusina ni Lola</strong><div style="font-size:10px;color:rgba(255,243,219,.62);margin-top:2px">Authentic Filipino Cuisine · Manila</div></div>
+            <div class="photo-preview-section">Mains</div>
+            <div class="photo-preview-item editing ${showPhoto ? "" : "no-photo"}">
+              ${renderThumb("IMG", true)}
+              <div><h4>${state.photoName}</h4><p>${state.photoDesc}</p><div class="chips">${activeBadges.map(b=>`<span class="badge ${b==="Vegan"?"green":b==="Halal"?"blue":b==="Spicy"?"red":""}">${b}</span>`).join("")}</div></div>
+              <div class="phone-food-price">${state.currency[1]} ${Number(state.photoPrice || 0).toLocaleString()}</div>
+            </div>
+            ${[
+              ["Kare-Kare","Oxtail stew, peanut sauce, bagoong","Halal","490","KK"],
+              ["Sinigang na Salmon","Tamarind broth, vegetables","Vegan","420","SS"]
+            ].map(i=>`<div class="photo-preview-item ${showPhoto ? "" : "no-photo"}">${renderThumb(i[4])}<div><h4>${i[0]}</h4><p>${i[1]}</p><span class="badge ${i[2]==="Vegan"?"green":"blue"}">${i[2]}</span></div><div class="phone-food-price">${state.currency[1]} ${i[3]}</div></div>`).join("")}
+            <div class="card photo-tips"><strong>Photo tips for best results</strong><p style="color:var(--muted);line-height:1.55;margin-bottom:0">Natural light or diffused light works best. Square or overhead angle works best on menus. Phone camera is fine - we auto-optimise on upload.</p></div>
+          </div>
         </div>`;
     }
 
@@ -1517,8 +1638,82 @@
       qsa("[data-toggle]").forEach(el => el.onchange = e => { state[e.target.dataset.toggle] = e.target.checked; renderPublic(); bind(); });
       const ps = qs("#publicSearch");
       if (ps) ps.oninput = e => { state.publicSearch = e.target.value; renderPublic(); bind(); qs("#publicSearch")?.focus(); };
+      qsa("[data-photo-source]").forEach(el => el.onclick = () => { state.photoSource = el.dataset.photoSource; renderPhotos(); bind(); });
+      qsa("[data-photo-fit]").forEach(el => el.onclick = () => { state.photoFit = el.dataset.photoFit; renderPhotos(); bind(); });
+      qsa("[data-photo-corner]").forEach(el => el.onclick = () => { state.photoCorner = el.dataset.photoCorner; renderPhotos(); bind(); });
+      qsa("[data-photo-size]").forEach(el => el.onclick = () => { state.photoSize = el.dataset.photoSize; renderPhotos(); bind(); });
+      qsa("[data-photo-badge]").forEach(el => el.onclick = () => {
+        const badge = el.dataset.photoBadge;
+        if (state.photoBadges.has(badge)) state.photoBadges.delete(badge);
+        else state.photoBadges.add(badge);
+        renderPhotos();
+        bind();
+      });
+      qsa("[data-stock-photo]").forEach(el => el.onclick = () => { state.photoStock = el.dataset.stockPhoto; state.photoImage = ""; renderPhotos(); bind(); });
+      const updatePhotoField = (id, key) => {
+        const el = qs(id);
+        if (el) el.oninput = e => { state[key] = e.target.value; renderPhotos(); bind(); qs(id)?.focus(); };
+      };
+      updatePhotoField("#photoName", "photoName");
+      updatePhotoField("#photoDesc", "photoDesc");
+      updatePhotoField("#photoPrice", "photoPrice");
+      const photoUrl = qs("#photoUrl");
+      if (photoUrl) photoUrl.oninput = e => { state.photoUrl = e.target.value; };
+      const loadPhotoUrl = qs("#loadPhotoUrl");
+      if (loadPhotoUrl) loadPhotoUrl.onclick = () => {
+        const url = (qs("#photoUrl")?.value || "").trim();
+        if (!url) return toast("Paste an image URL first");
+        state.photoUrl = url;
+        state.photoImage = url;
+        state.photoStock = "none";
+        renderPhotos();
+        bind();
+        toast("Image loaded from URL");
+      };
+      const handlePhotoFile = (file) => {
+        if (!file) return;
+        if (!file.type.match(/^image\/(png|jpeg|webp)$/)) return toast("Use PNG, JPG, or WebP");
+        if (file.size > 10 * 1024 * 1024) return toast("Image must be 10 MB or smaller");
+        state.photoUploadProgress = 12;
+        renderPhotos();
+        bind();
+        const reader = new FileReader();
+        reader.onload = () => {
+          let progress = 28;
+          const tick = setInterval(() => {
+            progress += 24;
+            state.photoUploadProgress = Math.min(progress, 96);
+            renderPhotos();
+            bind();
+            if (progress >= 96) {
+              clearInterval(tick);
+              state.photoImage = reader.result;
+              state.photoStock = "none";
+              state.photoUploadProgress = 100;
+              renderPhotos();
+              bind();
+              toast("Food photo uploaded and optimised");
+            }
+          }, 120);
+        };
+        reader.readAsDataURL(file);
+      };
+      const photoFile = qs("#photoFile");
+      if (photoFile) photoFile.onchange = e => handlePhotoFile(e.target.files?.[0]);
       const up = qs("#simulateUpload");
-      if (up) up.onclick = () => toast("Food photo uploaded and optimised");
+      if (up) up.onclick = () => qs("#photoFile")?.click();
+      const replacePhoto = qs("#replacePhoto");
+      if (replacePhoto) replacePhoto.onclick = () => qs("#photoFile")?.click();
+      const removePhoto = qs("#removePhoto");
+      if (removePhoto) removePhoto.onclick = () => { state.photoImage = ""; state.photoStock = "none"; renderPhotos(); bind(); toast("Photo removed"); };
+      const dropZone = qs("#photoDropZone");
+      if (dropZone) {
+        dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add("dragging"); };
+        dropZone.ondragleave = () => dropZone.classList.remove("dragging");
+        dropZone.ondrop = e => { e.preventDefault(); dropZone.classList.remove("dragging"); handlePhotoFile(e.dataTransfer.files?.[0]); };
+      }
+      const savePhotoItem = qs("#savePhotoItem");
+      if (savePhotoItem) savePhotoItem.onclick = () => toast(`${state.photoName} saved with ${state.photoBadges.size} badges`);
       qsa("[data-currency]").forEach(el => el.onclick = () => { state.currency = currencies.find(c => c[0] === el.dataset.currency); renderCurrency(); renderEditor(); renderPublic(); bind(); });
       const dec = qs("#decimals");
       if (dec) dec.onclick = () => { state.decimals = (state.decimals + 1) % 3; renderCurrency(); bind(); };
