@@ -424,19 +424,35 @@
     .public-item strong { font-size: 12px; }
     .public-item p { font-size: 10px; color: var(--muted); margin: 3px 0; }
 
-    .qr-demo {
-      width: 190px;
-      height: 190px;
-      background:
-        linear-gradient(90deg, var(--qr-color,#17130f) 12px, transparent 12px) 0 0 / 24px 24px,
-        linear-gradient(var(--qr-color,#17130f) 12px, transparent 12px) 0 0 / 24px 24px,
-        #fff;
-      border: 14px solid #fff;
-      outline: 1px solid var(--line);
-      margin: 12px auto;
-      position: relative;
+    .qr-live-card {
+      width: min(100%, 410px);
+      margin: 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      text-align: center;
+      color: var(--ink);
+      box-shadow: 0 18px 45px rgba(23,19,15,.09);
     }
-    .qr-demo:after { content: "MC"; position: absolute; inset: 68px; border-radius: 8px; background: #fff; display: grid; place-items: center; color: var(--qr-color,#17130f); font-weight: 900; }
+    .qr-mount {
+      width: var(--qr-px, 220px);
+      height: var(--qr-px, 220px);
+      margin: 14px auto;
+      display: grid;
+      place-items: center;
+      max-width: 100%;
+    }
+    .qr-mount canvas, .qr-mount svg, .qr-mount img { width: 100% !important; height: 100% !important; display: block; }
+    .qr-meta { color: var(--muted); font-size: 11px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .qr-template-preview { min-height: 96px; display: grid; gap: 8px; }
+    .qr-template-art { height: 44px; border-radius: 6px; background: linear-gradient(135deg, #17130f, #c8a34a); position: relative; overflow: hidden; }
+    .qr-template-art:after { content: ""; position: absolute; width: 22px; height: 22px; right: 10px; top: 11px; background: repeating-linear-gradient(90deg,#fff 0 3px,transparent 3px 5px); border: 4px solid #fff; }
+    .qr-icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .qr-icon-grid .chip { min-width: 0; padding: 8px 0; font-size: 15px; }
+    .color-input-tile { padding: 0; overflow: hidden; position: relative; }
+    .color-input-tile input { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); opacity: 0; cursor: pointer; }
+    .analytics-stat { display: grid; gap: 3px; }
+    .analytics-stat strong { font-size: 18px; }
 
     .currency-list { max-height: 540px; overflow: auto; }
     .currency-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 9px; align-items: center; padding: 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
@@ -531,6 +547,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0/lib/qr-code-styling.js" onload="window.drawQrCode && window.drawQrCode()"></script>
   <script>
     const screens = [
       ["dashboard", "Dashboard", "Live restaurant menu operations", "⌂"],
@@ -580,11 +597,18 @@
       aiPrompt: "",
       exportStage: 1,
       qrColor: "#17130f",
+      qrCustomColor: "#17130f",
+      qrBg: "#fffaf0",
+      qrCustomBg: "#fffaf0",
       qrSize: "Medium",
       qrStyle: "Square",
       qrLogo: true,
+      qrLogoIcon: "fork",
       qrCorrection: "H",
       qrTemplate: "Table card",
+      qrUrl: "https://menucraft.pro/menu/al-nakheel",
+      qrTopLabel: "Scan to view our menu",
+      qrBottomLabel: "alnakheel.menucraft.pro",
       publicColor: "#17130f",
       showPhotos: true,
       showPrices: true,
@@ -804,7 +828,7 @@
         </div>`;
     }
 
-    function renderQR() {
+    function renderQROld() {
       const sizes = ["Small", "Medium", "Large", "Poster"];
       const styles = ["Square", "Dots", "Rounded"];
       const corrections = ["L", "M", "Q", "H"];
@@ -842,6 +866,116 @@
             <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Device mix</div><div class="panel-sub">Customer scan devices</div></div></div><div class="panel-body"><div class="grid-3">${["68% Android","29% iOS","3% Other"].map(x=>card("",`<strong>${x.split(" ")[0]}</strong><span style="display:block;color:var(--muted);font-size:11px;margin-top:2px">${x.split(" ").slice(1).join(" ")}</span>`)).join("")}</div></div></div>
           </div>
         </div>`;
+    }
+
+    function qrSizePx() {
+      return { Small: 150, Medium: 220, Large: 300, Poster: 380 }[state.qrSize] || 220;
+    }
+
+    function qrSizeLabel() {
+      return { Small: "Small 3cm", Medium: "Medium 5cm", Large: "Large 8cm", Poster: "Poster 15cm" }[state.qrSize] || "Medium 5cm";
+    }
+
+    function qrLogoDataUri() {
+      const icons = { fork: "Fk", star: "*", leaf: "Lf", flame: "Fl", heart: "Ht", coffee: "Cf" };
+      const text = icons[state.qrLogoIcon] || "MC";
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88"><rect width="88" height="88" rx="18" fill="#fffaf0"/><rect x="5" y="5" width="78" height="78" rx="15" fill="none" stroke="${state.qrColor}" stroke-width="5"/><text x="44" y="53" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="${state.qrColor}">${text}</text></svg>`;
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+
+    function drawQrCode() {
+      const mount = qs("#qrCodeMount");
+      if (!mount) return;
+      const px = qrSizePx();
+      mount.innerHTML = "";
+      mount.style.setProperty("--qr-px", `${px}px`);
+      const dotType = state.qrStyle === "Dots" ? "dots" : state.qrStyle === "Rounded" ? "rounded" : "square";
+      if (window.QRCodeStyling) {
+        const qr = new QRCodeStyling({
+          width: px,
+          height: px,
+          type: "svg",
+          data: state.qrUrl,
+          image: state.qrLogo ? qrLogoDataUri() : "",
+          qrOptions: { errorCorrectionLevel: state.qrCorrection },
+          dotsOptions: { color: state.qrColor, type: dotType },
+          cornersSquareOptions: { color: state.qrColor, type: state.qrStyle === "Rounded" ? "extra-rounded" : "square" },
+          cornersDotOptions: { color: state.qrColor, type: state.qrStyle === "Dots" ? "dot" : "square" },
+          backgroundOptions: { color: state.qrBg },
+          imageOptions: { crossOrigin: "anonymous", margin: 7, imageSize: 0.24 }
+        });
+        qr.append(mount);
+        window.currentQrCode = qr;
+        return;
+      }
+      const img = document.createElement("img");
+      img.alt = "Scannable QR code";
+      img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${px}x${px}&ecc=${state.qrCorrection}&color=${state.qrColor.replace("#", "")}&bgcolor=${state.qrBg.replace("#", "")}&data=${encodeURIComponent(state.qrUrl)}`;
+      mount.appendChild(img);
+    }
+    window.drawQrCode = drawQrCode;
+
+    function renderQR() {
+      const sizes = ["Small", "Medium", "Large", "Poster"];
+      const styles = ["Square", "Dots", "Rounded"];
+      const corrections = ["L", "M", "Q", "H"];
+      const templates = [
+        ["Table card", "Clean table card for dine-in guests"],
+        ["Dark poster", "High contrast entrance or wall signage"],
+        ["Round sticker", "Counter labels and takeaway packaging"],
+        ["Receipt footer", "Narrow strip for printed receipts"],
+        ["Table tent", "Folded two-sided table display"],
+        ["Wristband", "Event and buffet wristband format"]
+      ];
+      const qrColors = ["#17130f", "#c8a34a", "#2d6a4f", "#bd3d30", "#1b4166", "#7d4a26", "#6d4aff"];
+      const bgColors = [["#fffaf0","Cream"],["#eaf4ff","Light blue"],["#111827","Black"]];
+      const logoIcons = [["fork","Fork"],["star","Star"],["leaf","Leaf"],["flame","Flame"],["heart","Heart"],["coffee","Coffee"]];
+      const scans = [["Mon",31],["Tue",24],["Wed",28],["Thu",35],["Fri",50],["Sat",41],["Sun",20]];
+      qs("#qr").innerHTML = `
+        <div class="split">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">QR code generator</div><div class="panel-sub">Real, scannable public menu code with live customisation</div></div><span class="badge green">Scan-safe</span></div>
+            <div class="panel-body">
+              <div class="grid-2">
+                <div>
+                  <div class="field"><label>Menu URL</label><input id="qrUrl" value="${state.qrUrl}"></div>
+                  <div class="field"><label>Label above QR</label><input id="qrTop" value="${state.qrTopLabel}"></div>
+                  <div class="field"><label>Label below QR</label><input id="qrBottom" value="${state.qrBottomLabel}"></div>
+                  <div class="field"><label>QR colour</label><div class="swatches">${qrColors.map(c=>`<button class="swatch ${state.qrColor===c?"active":""}" data-qr="${c}" style="background:${c}"></button>`).join("")}<button class="swatch color-input-tile" style="background:${state.qrCustomColor}" title="Custom QR colour"><input type="color" id="qrCustomColor" value="${state.qrCustomColor}"></button></div></div>
+                  <div class="field"><label>Background</label><div class="swatches">${bgColors.map(([c,l])=>`<button class="swatch ${state.qrBg===c?"active":""}" data-qr-bg="${c}" title="${l}" style="background:${c}"></button>`).join("")}<button class="swatch color-input-tile" style="background:${state.qrCustomBg}" title="Custom background"><input type="color" id="qrCustomBg" value="${state.qrCustomBg}"></button></div></div>
+                  <div class="field"><label>QR style</label><div class="chips">${styles.map(s=>`<button class="chip ${state.qrStyle===s?"active":""}" data-qr-style="${s}">${s}</button>`).join("")}</div></div>
+                  <div class="field"><label>Print size</label><div class="chips">${sizes.map(s=>`<button class="chip ${state.qrSize===s?"active":""}" data-qr-size="${s}">${qrSizeLabel().startsWith(s)?qrSizeLabel():s}</button>`).join("")}</div></div>
+                  <div class="field"><label>Error correction</label><div class="chips">${corrections.map(s=>`<button class="chip ${state.qrCorrection===s?"active":""}" data-qr-correction="${s}">${s} - ${s==="H"?"30":s==="Q"?"25":s==="M"?"15":"7"}%</button>`).join("")}</div></div>
+                  <label class="row" style="justify-content:space-between"><span><strong>Show centre logo</strong><span>Use H correction when the logo covers QR data</span></span><input type="checkbox" id="qrLogo" ${state.qrLogo?"checked":""}></label>
+                  <div class="field"><label>Centre icon</label><div class="qr-icon-grid">${logoIcons.map(([k,l])=>`<button class="chip ${state.qrLogoIcon===k?"active":""}" data-qr-logo-icon="${k}" title="${l}">${l}</button>`).join("")}</div></div>
+                </div>
+                <div>
+                  <div class="qr-live-card" style="background:${state.qrBg};color:${state.qrBg==="#111827"?"#fffaf0":"var(--ink)"}">
+                    <div id="qrTopLabel" style="font-weight:800;font-size:16px">${state.qrTopLabel}</div>
+                    <div class="qr-mount" id="qrCodeMount"></div>
+                    <div id="qrBottomLabel" style="font-weight:700;font-size:12px">${state.qrBottomLabel}</div>
+                  </div>
+                  <div class="qr-meta" style="margin-top:12px"><span>${state.qrTemplate}</span><span>${qrSizeLabel()}</span><span>${state.qrStyle}</span><span>${state.qrCorrection} correction</span></div>
+                  <div class="chips" style="justify-content:center;margin-top:12px"><button class="btn dark" id="downloadQR">Download PNG</button><button class="btn" id="downloadQRSVG">Download SVG</button><button class="btn" id="downloadQRPDF">Template PDF</button></div>
+                </div>
+              </div>
+              <div class="section-label">Print templates</div>
+              <div class="grid-3">${templates.map(t=>`<button class="card qr-template-preview ${state.qrTemplate===t[0]?"template-card":""}" data-qr-template="${t[0]}" style="text-align:left;padding:12px;border-color:${state.qrTemplate===t[0]?"var(--gold)":"var(--line)"}"><div class="qr-template-art" style="border-radius:${t[0]==="Round sticker"?"999px":"6px"};height:${t[0]==="Receipt footer"||t[0]==="Wristband"?"30px":"44px"};background:${t[0]==="Dark poster"?"#111827":t[0]==="Table tent"?"linear-gradient(135deg,#fffaf0,#c8a34a)":t[0]==="Wristband"?"#eaf4ff":"linear-gradient(135deg,#17130f,#c8a34a)"}"></div><strong>${t[0]}</strong><span style="display:block;color:var(--muted);font-size:11px">${t[1]}</span></button>`).join("")}</div>
+            </div>
+          </div>
+          <div>
+            <div class="panel"><div class="panel-head"><div><div class="panel-title">Scan analytics</div><div class="panel-sub">Last 7 days - Al Nakheel</div></div><span class="badge green">94% success</span></div><div class="panel-body">
+              <div class="grid-3">${[["189","Total scans"],["94%","Success rate"],["4:12","Avg. time on menu"]].map(x=>card("",`<div class="analytics-stat"><strong>${x[0]}</strong><span style="color:var(--muted);font-size:11px">${x[1]}</span></div>`)).join("")}</div>
+              <div style="height:128px;display:flex;align-items:flex-end;gap:6px;margin:16px 0 8px">${scans.map(([d,v],i)=>`<div style="flex:1;display:grid;gap:5px;text-align:center"><div style="height:${v/50*96}px;background:${i===4?"var(--gold)":"#d9d0c0"};border-radius:4px 4px 0 0"></div><span style="font-size:10px;color:var(--muted)">${d}</span></div>`).join("")}</div>
+              <div class="row"><strong style="width:90px">Android</strong><div class="bar" style="--w:68%"><div></div></div><span>68%</span></div>
+              <div class="row"><strong style="width:90px">iOS</strong><div class="bar" style="--w:29%"><div></div></div><span>29%</span></div>
+              <div class="row"><strong style="width:90px">Other</strong><div class="bar" style="--w:3%"><div></div></div><span>3%</span></div>
+            </div></div>
+            <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Production exports</div><div class="panel-sub">Download actions model final export pipeline</div></div></div><div class="panel-body">
+              ${[["PNG","300 DPI, print-safe up to A5"],["SVG","Vector signage and large-format print"],["PDF",`${state.qrTemplate} layout wrapped around the QR`]].map(x=>`<div class="row"><span class="badge blue">${x[0]}</span><div><strong>${x[1]}</strong><span>Uses the selected colours, logo, correction level and size</span></div></div>`).join("")}
+            </div></div>
+          </div>
+        </div>`;
+      requestAnimationFrame(drawQrCode);
     }
 
     function renderPublic() {
@@ -1219,19 +1353,29 @@
       qsa("[data-stage]").forEach(el => el.onclick = () => { state.exportStage = Number(el.dataset.stage); renderExports(); bind(); });
       const newJob = qs("#newJob");
       if (newJob) newJob.onclick = () => toast("New async export job created with status: queued");
-      qsa("[data-qr]").forEach(el => el.onclick = () => { state.qrColor = el.dataset.qr; renderQR(); bind(); });
+      qsa("[data-qr]").forEach(el => el.onclick = () => { state.qrColor = el.dataset.qr; state.qrCustomColor = state.qrColor; renderQR(); bind(); });
+      qsa("[data-qr-bg]").forEach(el => el.onclick = () => { state.qrBg = el.dataset.qrBg; state.qrCustomBg = state.qrBg; renderQR(); bind(); });
       qsa("[data-qr-size]").forEach(el => el.onclick = () => { state.qrSize = el.dataset.qrSize; renderQR(); bind(); });
       qsa("[data-qr-style]").forEach(el => el.onclick = () => { state.qrStyle = el.dataset.qrStyle; renderQR(); bind(); });
       qsa("[data-qr-correction]").forEach(el => el.onclick = () => { state.qrCorrection = el.dataset.qrCorrection; renderQR(); bind(); });
       qsa("[data-qr-template]").forEach(el => el.onclick = () => { state.qrTemplate = el.dataset.qrTemplate; renderQR(); bind(); });
+      qsa("[data-qr-logo-icon]").forEach(el => el.onclick = () => { state.qrLogoIcon = el.dataset.qrLogoIcon; renderQR(); bind(); });
       const qrLogo = qs("#qrLogo");
       if (qrLogo) qrLogo.onchange = e => { state.qrLogo = e.target.checked; renderQR(); bind(); };
+      const qrUrl = qs("#qrUrl");
+      if (qrUrl) qrUrl.oninput = e => { state.qrUrl = e.target.value || "https://menucraft.pro/menu/al-nakheel"; drawQrCode(); };
       const qrTop = qs("#qrTop");
-      if (qrTop) qrTop.oninput = e => { const label = qs("#qrLabel"); if (label) label.textContent = e.target.value; };
+      if (qrTop) qrTop.oninput = e => { state.qrTopLabel = e.target.value; const label = qs("#qrTopLabel"); if (label) label.textContent = state.qrTopLabel; };
+      const qrBottom = qs("#qrBottom");
+      if (qrBottom) qrBottom.oninput = e => { state.qrBottomLabel = e.target.value; const label = qs("#qrBottomLabel"); if (label) label.textContent = state.qrBottomLabel; };
+      const qrCustomColor = qs("#qrCustomColor");
+      if (qrCustomColor) qrCustomColor.oninput = e => { state.qrCustomColor = e.target.value; state.qrColor = e.target.value; drawQrCode(); };
+      const qrCustomBg = qs("#qrCustomBg");
+      if (qrCustomBg) qrCustomBg.oninput = e => { state.qrCustomBg = e.target.value; state.qrBg = e.target.value; const card = qs(".qr-live-card"); if (card) card.style.background = state.qrBg; drawQrCode(); };
       const dl = qs("#downloadQR");
-      if (dl) dl.onclick = () => toast("QR PNG download simulated");
+      if (dl) dl.onclick = () => window.currentQrCode ? window.currentQrCode.download({ name: "menucraft-qr", extension: "png" }) : toast("QR PNG download ready in production at 300 DPI");
       const dlSvg = qs("#downloadQRSVG");
-      if (dlSvg) dlSvg.onclick = () => toast("QR SVG download simulated");
+      if (dlSvg) dlSvg.onclick = () => window.currentQrCode ? window.currentQrCode.download({ name: "menucraft-qr", extension: "svg" }) : toast("QR SVG download ready in production");
       const dlPdf = qs("#downloadQRPDF");
       if (dlPdf) dlPdf.onclick = () => toast(`${state.qrTemplate} PDF download simulated`);
       qsa("[data-public-color]").forEach(el => el.onclick = () => { state.publicColor = el.dataset.publicColor; renderPublic(); bind(); });
