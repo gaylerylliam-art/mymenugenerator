@@ -7,6 +7,7 @@ dist/
 build/
 .next/
 .vercel/
+.netlify/
 
 *.log
 *.tmp
