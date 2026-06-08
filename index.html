@@ -572,6 +572,11 @@
       aiPrompt: "",
       exportStage: 1,
       qrColor: "#17130f",
+      qrSize: "Medium",
+      qrStyle: "Square",
+      qrLogo: true,
+      qrCorrection: "H",
+      qrTemplate: "Table card",
       publicColor: "#17130f",
       showPhotos: true,
       showPrices: true,
@@ -787,25 +792,42 @@
     }
 
     function renderQR() {
+      const sizes = ["Small", "Medium", "Large", "Poster"];
+      const styles = ["Square", "Dots", "Rounded"];
+      const corrections = ["L", "M", "Q", "H"];
+      const templates = ["Table card", "Poster", "Sticker", "Receipt footer", "Table tent", "Wristband"];
       qs("#qr").innerHTML = `
         <div class="split">
           <div class="panel"><div class="panel-head"><div><div class="panel-title">QR code generator</div><div class="panel-sub">Customise scan-ready public menu codes</div></div></div>
-            <div class="panel-body grid-2">
+            <div class="panel-body">
+              <div class="grid-2">
               <div>
                 <div class="field"><label>Menu URL</label><input value="https://menucraft.pro/menu/al-nakheel"></div>
                 <div class="field"><label>Label above QR</label><input id="qrTop" value="Scan to view our menu"></div>
                 <div class="field"><label>QR colour</label><div class="swatches">${["#17130f","#c8a34a","#2d6a4f","#bd3d30","#1b4166"].map(c=>`<button class="swatch ${state.qrColor===c?"active":""}" data-qr="${c}" style="background:${c}"></button>`).join("")}</div></div>
-                <div class="field"><label>Error correction</label><select><option>H · 30% best for logo</option><option>M · 15%</option><option>L · 7%</option></select></div>
-                <button class="btn dark" id="downloadQR">Download PNG</button>
+                <div class="field"><label>QR style</label><div class="chips">${styles.map(s=>`<button class="chip ${state.qrStyle===s?"active":""}" data-qr-style="${s}">${s}</button>`).join("")}</div></div>
+                <div class="field"><label>Print size</label><div class="chips">${sizes.map(s=>`<button class="chip ${state.qrSize===s?"active":""}" data-qr-size="${s}">${s}</button>`).join("")}</div></div>
+                <div class="field"><label>Error correction</label><div class="chips">${corrections.map(s=>`<button class="chip ${state.qrCorrection===s?"active":""}" data-qr-correction="${s}">${s} · ${s==="H"?"30":s==="Q"?"25":s==="M"?"15":"7"}%</button>`).join("")}</div></div>
+                <label class="row" style="justify-content:space-between"><span><strong>Show logo in centre</strong><span>Uses high correction for reliable scanning</span></span><input type="checkbox" id="qrLogo" ${state.qrLogo?"checked":""}></label>
               </div>
               <div style="text-align:center">
                 <div id="qrLabel" style="font-weight:760">Scan to view our menu</div>
-                <div class="qr-demo" style="--qr-color:${state.qrColor}"></div>
-                <div style="color:var(--muted);font-size:12px">Table card · SVG/PDF ready · 189 scans</div>
+                <div class="qr-demo" style="--qr-color:${state.qrColor};border-radius:${state.qrStyle==="Rounded"?"14px":"0"}">${state.qrLogo?`<span style="position:absolute;inset:68px;border-radius:8px;background:#fff;display:grid;place-items:center;color:${state.qrColor};font-weight:900;z-index:2">MC</span>`:""}</div>
+                <div style="color:var(--muted);font-size:12px">${state.qrTemplate} · ${state.qrSize} · ${state.qrCorrection} correction</div>
+                <div class="chips" style="justify-content:center;margin-top:12px"><button class="btn dark" id="downloadQR">Download PNG</button><button class="btn" id="downloadQRSVG">Download SVG</button><button class="btn" id="downloadQRPDF">Template PDF</button></div>
               </div>
+              </div>
+              <div class="section-label">Print templates</div>
+              <div class="grid-3">${templates.map(t=>`<button class="card ${state.qrTemplate===t?"template-card":""}" data-qr-template="${t}" style="text-align:left;padding:12px;border-color:${state.qrTemplate===t?"var(--gold)":"var(--line)"}"><strong>${t}</strong><span style="display:block;color:var(--muted);font-size:11px;margin-top:4px">${t==="Sticker"?"Round counter labels":t==="Poster"?"Entrance and wall print":t==="Receipt footer"?"Add to receipts":"Restaurant table use"}</span></button>`).join("")}</div>
             </div>
           </div>
-          <div class="panel"><div class="panel-head"><div><div class="panel-title">Scan analytics</div><div class="panel-sub">Last 7 days</div></div></div><div class="panel-body">${["Monday 31","Tuesday 24","Wednesday 28","Thursday 35","Friday 50","Saturday 41","Sunday 20"].map((x,i)=>{const [d,v]=x.split(" "); return `<div class="row"><strong style="width:90px">${d}</strong><div class="bar" style="--w:${Number(v)*2}%"><div></div></div><span>${v}</span></div>`}).join("")}</div></div>
+          <div>
+            <div class="panel"><div class="panel-head"><div><div class="panel-title">Scan analytics</div><div class="panel-sub">Last 7 days · Al Nakheel</div></div><span class="badge green">94% success</span></div><div class="panel-body">
+              <div class="grid-3">${[["189","Total scans"],["94%","Successful"],["4:12","Avg. time"]].map(x=>card("",`<div class="kpi"><div class="value" style="font-size:20px">${x[0]}</div><div class="label">${x[1]}</div></div>`)).join("")}</div>
+              ${["Monday 31","Tuesday 24","Wednesday 28","Thursday 35","Friday 50","Saturday 41","Sunday 20"].map((x,i)=>{const [d,v]=x.split(" "); return `<div class="row"><strong style="width:90px">${d}</strong><div class="bar" style="--w:${Number(v)*2}%"><div></div></div><span>${v}</span></div>`}).join("")}
+            </div></div>
+            <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Device mix</div><div class="panel-sub">Customer scan devices</div></div></div><div class="panel-body"><div class="grid-3">${["68% Android","29% iOS","3% Other"].map(x=>card("",`<strong>${x.split(" ")[0]}</strong><span style="display:block;color:var(--muted);font-size:11px;margin-top:2px">${x.split(" ").slice(1).join(" ")}</span>`)).join("")}</div></div></div>
+          </div>
         </div>`;
     }
 
@@ -870,6 +892,19 @@
       const users = [
         ["Rashed Khalid","Free","UAE","Active"],["Maria Reyes","Pro","Philippines","Active"],["Ahmed Al-Sayed","Pro","UAE","Active"],["Priya Krishnan","Pro","India","Inactive"],["Juan Tamayo","Agency","Colombia","Active"]
       ].filter(u => state.adminFilter === "All" || u[1] === state.adminFilter);
+      const tickets = [
+        ["T-2841","Maria Reyes","PDF export shows watermark on Pro plan","High","Open","2h ago"],
+        ["T-2840","Ahmed Al-Sayed","Arabic RTL layout issue on mobile menu","High","Open","5h ago"],
+        ["T-2839","Juan Tamayo","Agency billing invoice for April","Medium","Pending","1d ago"],
+        ["T-2838","Sofia Lima","Cannot upload photo larger than 2MB","Medium","Open","2d ago"],
+        ["T-2837","Priya Krishnan","INR currency not showing correctly","Low","Resolved","3d ago"]
+      ];
+      const flags = [
+        ["AI menu translation","ai_menu_translate","Pro users can translate menus to Arabic, French, and Spanish","Pro · Agency","on"],
+        ["Social media exports","social_exports","Instagram, WhatsApp, Facebook, TikTok, and banner image formats","Pro · Agency","on"],
+        ["CMYK PDF export","cmyk_export","Print-ready PDF conversion through Ghostscript render worker","Agency","on"],
+        ["Bulk item import","bulk_import","CSV or spreadsheet import for menu item libraries","Pro · Agency","off"]
+      ];
       qs("#admin").innerHTML = `
         <div class="grid-4">${[["2,841","Total users"],["487","Pro subscribers"],["$4,821","MRR"],["7","Open tickets"]].map(k=>card("",`<div class="kpi"><div class="value">${k[0]}</div><div class="label">${k[1]}</div></div>`)).join("")}</div>
         <div class="grid-2" style="margin-top:12px">
@@ -897,7 +932,12 @@
         <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Users and subscriptions</div><div class="panel-sub">Admin table with plan filtering</div></div><div class="chips">${["All","Free","Pro","Agency"].map(f=>`<button class="chip ${state.adminFilter===f?"active":""}" data-admin-filter="${f}">${f}</button>`).join("")}</div></div>
           <table><thead><tr><th>User</th><th>Plan</th><th>Country</th><th>Status</th><th>Actions</th></tr></thead><tbody>${users.map(u=>`<tr><td><strong>${u[0]}</strong></td><td><span class="badge ${u[1]==="Pro"?"green":u[1]==="Agency"?"blue":""}">${u[1]}</span></td><td>${u[2]}</td><td>${u[3]}</td><td><button class="btn">View</button></td></tr>`).join("")}</tbody></table>
         </div>
-        <div class="grid-2" style="margin-top:12px">${["AI menu translation","Social media exports","CMYK PDF export","Custom domain"].map((f,i)=>card(f,`<p style="color:var(--muted)">Feature flag ${i<2?"enabled for Pro":"Agency gated"}</p><button class="btn">${i<2?"Disable":"Configure"}</button>`)).join("")}</div>`;
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Support tickets</div><div class="panel-sub">Open, pending, resolved, and priority triage</div></div><div class="chips"><button class="chip active">All</button><button class="chip">Open</button><button class="chip">Pending</button><button class="chip">High priority</button></div></div>
+          <table><thead><tr><th>#</th><th>User</th><th>Subject</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>${tickets.map(t=>`<tr><td>${t[0]}</td><td><strong>${t[1]}</strong></td><td>${t[2]}</td><td><span class="badge ${t[3]==="High"?"red":t[3]==="Medium"?"":"blue"}">${t[3]}</span></td><td><span class="badge ${t[4]==="Resolved"?"green":t[4]==="Open"?"red":"blue"}">${t[4]}</span></td><td>${t[5]}</td><td><button class="btn">Reply</button></td></tr>`).join("")}</tbody></table>
+        </div>
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Feature flags</div><div class="panel-sub">Tier-gated rollout controls</div></div><button class="btn dark">New flag</button></div><div class="panel-body">
+          ${flags.map(f=>`<div class="row" style="justify-content:space-between"><div><strong>${f[0]}</strong><span>${f[2]}</span><div class="chips" style="margin-top:6px"><span class="badge blue">${f[1]}</span><span class="badge">${f[3]}</span></div></div><button class="btn ${f[4]==="on"?"dark":""}">${f[4]==="on"?"Enabled":"Disabled"}</button></div>`).join("")}
+        </div></div>`;
     }
 
     function renderPricing() {
@@ -1061,10 +1101,20 @@
       const newJob = qs("#newJob");
       if (newJob) newJob.onclick = () => toast("New async export job created with status: queued");
       qsa("[data-qr]").forEach(el => el.onclick = () => { state.qrColor = el.dataset.qr; renderQR(); bind(); });
+      qsa("[data-qr-size]").forEach(el => el.onclick = () => { state.qrSize = el.dataset.qrSize; renderQR(); bind(); });
+      qsa("[data-qr-style]").forEach(el => el.onclick = () => { state.qrStyle = el.dataset.qrStyle; renderQR(); bind(); });
+      qsa("[data-qr-correction]").forEach(el => el.onclick = () => { state.qrCorrection = el.dataset.qrCorrection; renderQR(); bind(); });
+      qsa("[data-qr-template]").forEach(el => el.onclick = () => { state.qrTemplate = el.dataset.qrTemplate; renderQR(); bind(); });
+      const qrLogo = qs("#qrLogo");
+      if (qrLogo) qrLogo.onchange = e => { state.qrLogo = e.target.checked; renderQR(); bind(); };
       const qrTop = qs("#qrTop");
       if (qrTop) qrTop.oninput = e => { const label = qs("#qrLabel"); if (label) label.textContent = e.target.value; };
       const dl = qs("#downloadQR");
       if (dl) dl.onclick = () => toast("QR PNG download simulated");
+      const dlSvg = qs("#downloadQRSVG");
+      if (dlSvg) dlSvg.onclick = () => toast("QR SVG download simulated");
+      const dlPdf = qs("#downloadQRPDF");
+      if (dlPdf) dlPdf.onclick = () => toast(`${state.qrTemplate} PDF download simulated`);
       qsa("[data-public-color]").forEach(el => el.onclick = () => { state.publicColor = el.dataset.publicColor; renderPublic(); bind(); });
       qsa("[data-toggle]").forEach(el => el.onchange = e => { state[e.target.dataset.toggle] = e.target.checked; renderPublic(); bind(); });
       const ps = qs("#publicSearch");
