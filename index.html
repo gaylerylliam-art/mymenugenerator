@@ -189,6 +189,14 @@
     .btn.dark { background: var(--ink); color: #fff8eb; border-color: var(--ink); }
     .btn.gold { background: var(--gold); color: var(--ink); border-color: var(--gold); }
     .btn.icon { width: 36px; padding: 0; }
+    .btn.danger { color: var(--red); }
+    .btn.danger:hover { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+    .flag-switch { position: relative; width: 44px; height: 24px; display: inline-block; flex: none; }
+    .flag-switch input { opacity: 0; width: 0; height: 0; }
+    .flag-switch span { position: absolute; cursor: pointer; inset: 0; background: #d9d0c0; border-radius: 999px; transition: .2s; }
+    .flag-switch span::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+    .flag-switch input:checked + span { background: var(--gold); }
+    .flag-switch input:checked + span::before { transform: translateX(20px); }
 
     .screen { display: none; padding: 20px 22px 28px; }
     .screen.active { display: block; }
@@ -584,6 +592,10 @@
       currency: currencies[0],
       decimals: 0,
       adminFilter: "All",
+      adminSection: "overview",
+      ticketFilter: "All",
+      auditFilter: "All",
+      flags: {},
       billing: "monthly",
       pricingCurrency: ["PHP", "₱", 1],
       openFaqs: new Set([0])
@@ -890,55 +902,122 @@
     }
 
     function renderAdmin() {
-      const users = [
-        ["Rashed Khalid","Free","UAE","Active"],["Maria Reyes","Pro","Philippines","Active"],["Ahmed Al-Sayed","Pro","UAE","Active"],["Priya Krishnan","Pro","India","Inactive"],["Juan Tamayo","Agency","Colombia","Active"]
-      ].filter(u => state.adminFilter === "All" || u[1] === state.adminFilter);
-      const tickets = [
+      const adminNav = [
+        ["overview", "Overview", "2,841"],
+        ["users", "Users", "10"],
+        ["subscriptions", "Subscriptions", "8"],
+        ["revenue", "Revenue", "$5.1k"],
+        ["templates", "Templates", "9"],
+        ["tickets", "Support", "12"],
+        ["flags", "Feature flags", "8"],
+        ["audit", "Audit log", "12"]
+      ];
+      const usersAll = [
+        ["RK","Rashed Khalid","rashed@kusinalola.ph","🇵🇭 Philippines","Free",1,"Jun 7, 2026","Active"],
+        ["MR","Maria Reyes","maria@cafereyes.ph","🇵🇭 Philippines","Pro",4,"May 28, 2026","Active"],
+        ["AS","Ahmed Al-Sayed","ahmed@alnakheel.ae","🇦🇪 UAE","Pro",7,"May 15, 2026","Active"],
+        ["SL","Sofia Lima","sofia@saborpaulista.br","🇧🇷 Brazil","Free",1,"Jun 5, 2026","Active"],
+        ["JT","Juan Tamayo","juan@agencia.co","🇨🇴 Colombia","Agency",18,"Apr 12, 2026","Active"],
+        ["PK","Priya Krishnan","priya@spiceroute.in","🇮🇳 India","Pro",3,"Jun 1, 2026","Inactive"],
+        ["BN","Bob Nguyen","bob@phohouse.vn","🇻🇳 Vietnam","Free",1,"Jun 6, 2026","Banned"],
+        ["YT","Yuki Tanaka","yuki@sakurahouse.jp","🇯🇵 Japan","Pro",5,"Mar 22, 2026","Active"],
+        ["CM","Carlos Mendoza","carlos@tacomx.mx","🇲🇽 Mexico","Pro",2,"Jun 3, 2026","Active"],
+        ["AK","Aisha Kaur","aisha@dhabikirangi.sg","🇸🇬 Singapore","Agency",11,"Feb 18, 2026","Active"]
+      ];
+      const subscriptions = [
+        ["Maria Reyes","Pro","Monthly","₱499","PHP","Jul 28, 2026","Active"],
+        ["Ahmed Al-Sayed","Pro","Annual","$59/mo","USD","May 15, 2027","Active"],
+        ["Juan Tamayo","Agency","Annual","$179/mo","USD","Apr 12, 2027","Active"],
+        ["Priya Krishnan","Pro","Monthly","₹399","INR","Jul 1, 2026","Active"],
+        ["Yuki Tanaka","Pro","Annual","¥980/mo","JPY","Mar 22, 2027","Active"],
+        ["Carlos Mendoza","Pro","Monthly","MX$99","MXN","Jul 3, 2026","Pending"],
+        ["Aisha Kaur","Agency","Annual","S$229/mo","SGD","Feb 18, 2027","Active"],
+        ["Sofia Lima","Pro","Monthly","R$49","BRL","Jul 5, 2026","Active"]
+      ];
+      const templatesAdmin = [
+        ["Maison Fine Dining","Fine dining","Pro","2,100","4.9","Live"],
+        ["Al Nakheel Arabic","Arabic","Pro","3,400","4.8","Live"],
+        ["Rustic Brew Cafe","Cafe","Free","1,800","4.7","Live"],
+        ["Quick Bite Fast Food","Fast food","Free","5,200","4.6","Live"],
+        ["Aurelius Luxury","Luxury","Pro","892","5.0","Live"],
+        ["Modern Minimalist","Minimalist","Free","6,700","4.5","Live"],
+        ["Filipino Feast","Filipino","Pro","450","4.7","Draft"],
+        ["Sakura Asian Fusion","Asian","Free","4,100","4.9","Live"],
+        ["La Boulangerie","Bakery","Pro","1,500","4.8","Live"]
+      ];
+      const ticketsAll = [
         ["T-2841","Maria Reyes","PDF export shows watermark on Pro plan","High","Open","2h ago"],
         ["T-2840","Ahmed Al-Sayed","Arabic RTL layout issue on mobile menu","High","Open","5h ago"],
         ["T-2839","Juan Tamayo","Agency billing invoice for April","Medium","Pending","1d ago"],
         ["T-2838","Sofia Lima","Cannot upload photo larger than 2MB","Medium","Open","2d ago"],
-        ["T-2837","Priya Krishnan","INR currency not showing correctly","Low","Resolved","3d ago"]
+        ["T-2837","Priya Krishnan","INR currency not showing correctly","Low","Resolved","3d ago"],
+        ["T-2836","Carlos Mendoza","QR code not scanning at restaurant","Medium","Open","4d ago"],
+        ["T-2835","Yuki Tanaka","Request JPY pricing support","Low","Resolved","5d ago"],
+        ["T-2834","Aisha Kaur","White-label custom domain setup help","Medium","Pending","6d ago"],
+        ["T-2833","Bob Nguyen","Appealing account ban after spam reports","High","Open","7d ago"],
+        ["T-2832","Rashed Khalid","Upgrade button not loading on mobile","Low","Resolved","8d ago"],
+        ["T-2831","Carlos Mendoza","Template not saving colour changes","Medium","Open","9d ago"],
+        ["T-2830","Priya Krishnan","GCash payment option missing","High","Open","10d ago"]
       ];
-      const flags = [
-        ["AI menu translation","ai_menu_translate","Pro users can translate menus to Arabic, French, and Spanish","Pro · Agency","on"],
-        ["Social media exports","social_exports","Instagram, WhatsApp, Facebook, TikTok, and banner image formats","Pro · Agency","on"],
-        ["CMYK PDF export","cmyk_export","Print-ready PDF conversion through Ghostscript render worker","Agency","on"],
-        ["Bulk item import","bulk_import","CSV or spreadsheet import for menu item libraries","Pro · Agency","off"]
+      const flagsAll = [
+        ["AI menu translation","ai_menu_translate","Allow Pro users to translate menus to Arabic, French, Spanish","Pro Agency",true],
+        ["Flipbook viewer","flipbook_mode","Interactive PDF page-flip viewer on digital menu page","Pro Agency",true],
+        ["Custom domain","custom_domain","Map a custom domain to a digital menu page","Agency",true],
+        ["Bulk item import","bulk_import","Upload CSV or spreadsheet menu items in bulk","Pro Agency",false],
+        ["AI design suggestions","ai_design_suggest","AI recommends layouts, colours, and font pairings","Pro Agency",true],
+        ["CMYK PDF export","cmyk_export","Print-ready PDFs through Ghostscript render worker","Agency",true],
+        ["Social media exports","social_exports","Instagram, WhatsApp, Facebook, TikTok, and banner formats","Pro Agency",true],
+        ["Maintenance mode","maintenance_mode","Show maintenance banner to non-admin users","Off",false]
       ];
-      qs("#admin").innerHTML = `
-        <div class="grid-4">${[["2,841","Total users"],["487","Pro subscribers"],["$4,821","MRR"],["7","Open tickets"]].map(k=>card("",`<div class="kpi"><div class="value">${k[0]}</div><div class="label">${k[1]}</div></div>`)).join("")}</div>
-        <div class="grid-2" style="margin-top:12px">
-          <div class="panel"><div class="panel-head"><div><div class="panel-title">Revenue analytics</div><div class="panel-sub">Last 12 months · plan and currency mix</div></div><span class="badge green">+9.1%</span></div>
-            <div class="panel-body">
-              <div style="height:120px;display:flex;align-items:flex-end;gap:5px">
-                ${[35,41,46,52,58,63,67,74,79,85,90,100].map((v,i)=>`<div style="flex:1;display:grid;gap:5px;text-align:center"><div style="height:${v}px;background:${i===11?"var(--gold)":"#ded5c5"};border-radius:3px 3px 0 0"></div><span style="font-size:9px;color:var(--muted)">${["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"][i]}</span></div>`).join("")}
-              </div>
-              <div class="grid-3" style="margin-top:12px">
-                ${[["Pro Monthly","$2,441"],["Pro Annual","$1,735"],["Agency","$928"]].map(x=>`<div class="card" style="padding:10px"><strong>${x[1]}</strong><span style="display:block;color:var(--muted);font-size:11px;margin-top:2px">${x[0]}</span></div>`).join("")}
-              </div>
-            </div>
-          </div>
-          <div class="panel"><div class="panel-head"><div><div class="panel-title">Audit log</div><div class="panel-sub">Recent admin and customer events</div></div><button class="btn">Export log</button></div>
-            <div class="panel-body">
-              ${[
-                ["create","Maria Reyes created The Corner Cafe Menu v2","2 min ago"],
-                ["update","Feature flag bulk_import enabled for Pro","15 min ago"],
-                ["login","Ahmed Al-Sayed signed in from Dubai","1h ago"],
-                ["delete","Admin deleted a spam account","3h ago"]
-              ].map(a=>`<div class="row"><span class="badge ${a[0]==="delete"?"red":a[0]==="update"?"blue":"green"}">${a[0]}</span><div><strong>${a[1]}</strong><span>${a[2]} · IP logged</span></div></div>`).join("")}
-            </div>
-          </div>
-        </div>
-        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Users and subscriptions</div><div class="panel-sub">Admin table with plan filtering</div></div><div class="chips">${["All","Free","Pro","Agency"].map(f=>`<button class="chip ${state.adminFilter===f?"active":""}" data-admin-filter="${f}">${f}</button>`).join("")}</div></div>
-          <table><thead><tr><th>User</th><th>Plan</th><th>Country</th><th>Status</th><th>Actions</th></tr></thead><tbody>${users.map(u=>`<tr><td><strong>${u[0]}</strong></td><td><span class="badge ${u[1]==="Pro"?"green":u[1]==="Agency"?"blue":""}">${u[1]}</span></td><td>${u[2]}</td><td>${u[3]}</td><td><button class="btn">View</button></td></tr>`).join("")}</tbody></table>
-        </div>
-        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Support tickets</div><div class="panel-sub">Open, pending, resolved, and priority triage</div></div><div class="chips"><button class="chip active">All</button><button class="chip">Open</button><button class="chip">Pending</button><button class="chip">High priority</button></div></div>
-          <table><thead><tr><th>#</th><th>User</th><th>Subject</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>${tickets.map(t=>`<tr><td>${t[0]}</td><td><strong>${t[1]}</strong></td><td>${t[2]}</td><td><span class="badge ${t[3]==="High"?"red":t[3]==="Medium"?"":"blue"}">${t[3]}</span></td><td><span class="badge ${t[4]==="Resolved"?"green":t[4]==="Open"?"red":"blue"}">${t[4]}</span></td><td>${t[5]}</td><td><button class="btn">Reply</button></td></tr>`).join("")}</tbody></table>
-        </div>
-        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Feature flags</div><div class="panel-sub">Tier-gated rollout controls</div></div><button class="btn dark">New flag</button></div><div class="panel-body">
-          ${flags.map(f=>`<div class="row" style="justify-content:space-between"><div><strong>${f[0]}</strong><span>${f[2]}</span><div class="chips" style="margin-top:6px"><span class="badge blue">${f[1]}</span><span class="badge">${f[3]}</span></div></div><button class="btn ${f[4]==="on"?"dark":""}">${f[4]==="on"?"Enabled":"Disabled"}</button></div>`).join("")}
-        </div></div>`;
+      const auditAll = [
+        ["create","Maria Reyes","Created menu \"The Corner Cafe Menu v2\"","2 min ago","112.198.xx.xx"],
+        ["update","Super Admin","Updated feature flag: bulk_import enabled for Pro","15 min ago","Admin"],
+        ["login","Ahmed Al-Sayed","Signed in via Google OAuth from Dubai, UAE","1h ago","89.43.xx.xx"],
+        ["create","Rashed Khalid","Uploaded food photo to Crispy Pata item","2h ago","49.144.xx.xx"],
+        ["delete","Super Admin","Deleted user account: bob@phohouse.vn (spam)","3h ago","Admin"],
+        ["update","Juan Tamayo","Changed subscription: Agency Monthly to Agency Annual","5h ago","186.xx.xx.xx"],
+        ["create","Aisha Kaur","Created 3 new menus for client Tandoor Palace","6h ago","175.xx.xx.xx"],
+        ["login","Super Admin","Admin login from Singapore with 2FA verified","8h ago","Admin"],
+        ["update","Priya Krishnan","Exported Spice Route Menu at print quality","10h ago","49.35.xx.xx"],
+        ["create","Carlos Mendoza","Created QR code for Taco MX with rounded gold style","12h ago","200.xx.xx.xx"],
+        ["delete","Maria Reyes","Deleted old menu item from Cafe menu","1d ago","112.198.xx.xx"],
+        ["update","Super Admin","Published Filipino Feast template to Pro tier","2d ago","Admin"]
+      ];
+      const badge = (text) => `<span class="badge ${text==="Pro"||text==="Active"||text==="Resolved"?"green":text==="Agency"||text==="Pending"||text==="Low"?"blue":text==="High"||text==="Banned"||text==="Open"?"red":""}">${text}</span>`;
+      const avatar = (initials) => `<span style="width:26px;height:26px;border-radius:50%;background:var(--gold-2);color:#80620f;display:inline-grid;place-items:center;font-size:10px;font-weight:800">${initials}</span>`;
+      const adminShell = (content) => `
+        <div style="display:grid;grid-template-columns:204px minmax(0,1fr);min-height:720px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)">
+          <aside style="background:#0f172a;color:#cbd5e1;padding:12px;display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:center;gap:8px;padding:4px 4px 12px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px"><div class="mark" style="width:28px;height:28px;border-radius:6px">MC</div><div><strong style="color:#f8fafc;font-size:13px">MenuCraft</strong><span style="display:block;color:#64748b;font-size:9px">Internal ops dashboard</span></div></div>
+            ${adminNav.map(n=>`<button class="btn" data-admin-section="${n[0]}" style="justify-content:flex-start;background:${state.adminSection===n[0]?"rgba(200,163,74,.15)":"transparent"};border:0;color:${state.adminSection===n[0]?"var(--gold)":"#94a3b8"}"><span style="width:16px">${n[1][0]}</span>${n[1]}<span style="margin-left:auto;font-size:10px">${n[2]}</span></button>`).join("")}
+          </aside>
+          <div style="min-width:0;padding:14px;background:#f3efe7">${content}</div>
+        </div>`;
+      const kpis = (items) => `<div class="grid-4">${items.map(k=>card("",`<div class="kpi"><div class="value">${k[0]}</div><div class="label">${k[1]}</div><div class="trend">${k[2]||""}</div></div>`)).join("")}</div>`;
+      const overview = () => `
+        ${kpis([["2,841","Total users","+124 this week"],["512","Paid subscribers","+34 this week"],["$5,104","MRR","+9.1% vs last month"],["7","Open tickets","3 high priority"]])}
+        <div class="grid-2" style="margin-top:12px"><div class="panel"><div class="panel-head"><div><div class="panel-title">New signups - last 8 weeks</div><div class="panel-sub">Latest week highlighted in gold</div></div></div><div class="panel-body"><div style="height:96px;display:flex;align-items:flex-end;gap:5px">${[38,45,52,41,67,73,89,124].map((v,i)=>`<div style="flex:1;display:grid;gap:4px;text-align:center"><div style="height:${v/124*78}px;background:${i===7?"var(--gold)":"#d9d0c0"};border-radius:3px 3px 0 0"></div><span style="font-size:9px;color:var(--muted)">W${19+i}</span></div>`).join("")}</div></div></div>
+        <div class="panel"><div class="panel-head"><div><div class="panel-title">Plan mix</div><div class="panel-sub">82% Free / 17% Pro / 1% Agency</div></div></div><div class="panel-body"><div style="width:128px;height:128px;border-radius:50%;margin:0 auto;background:conic-gradient(#e2e8f0 0 82%, var(--gold) 82% 99%, var(--blue) 99% 100%);display:grid;place-items:center"><div style="width:78px;height:78px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-weight:800">2,841</div></div><div class="chips" style="justify-content:center;margin-top:12px"><span class="badge">Free 82%</span><span class="badge">Pro 17%</span><span class="badge blue">Agency 1%</span></div></div></div></div>
+        <div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Recent signups</div><div class="panel-sub">Country flags and latest users</div></div></div><table><thead><tr><th>User</th><th>Country</th><th>Plan</th><th>Joined</th><th>Status</th></tr></thead><tbody>${usersAll.slice(0,5).map(u=>`<tr><td>${avatar(u[0])} <strong>${u[1]}</strong></td><td>${u[3]}</td><td>${badge(u[4])}</td><td>${u[6]}</td><td>${badge(u[7])}</td></tr>`).join("")}</tbody></table></div>`;
+      const usersView = () => {
+        const filtered = usersAll.filter(u => state.adminFilter==="All" || (state.adminFilter==="Banned" ? u[7]==="Banned" : u[4]===state.adminFilter));
+        return `<div class="panel"><div class="panel-head"><div><div class="panel-title">Users</div><div class="panel-sub">10 users from 10 countries</div></div><div class="chips">${["All","Pro","Agency","Free","Banned"].map(f=>`<button class="chip ${state.adminFilter===f?"active":""}" data-admin-filter="${f}">${f}</button>`).join("")}</div></div><table><thead><tr><th>User</th><th>Email</th><th>Country</th><th>Plan</th><th>Menus</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody>${filtered.map(u=>`<tr><td>${avatar(u[0])} <strong>${u[1]}</strong></td><td style="font-family:ui-monospace,Consolas,monospace">${u[2]}</td><td>${u[3]}</td><td>${badge(u[4])}</td><td>${u[5]}</td><td>${u[6]}</td><td>${badge(u[7])}</td><td><button class="btn icon" title="View">👁</button> <button class="btn icon" title="Edit">✎</button> <button class="btn icon" title="Ban" style="color:var(--red)">⊘</button></td></tr>`).join("")}</tbody></table></div>`;
+      };
+      const subscriptionsView = () => `${kpis([["$5,104","MRR","+9.1%"],["$61,248","ARR","+14.2%"],["3.1%","Churn","-0.4%"]])}<div class="panel" style="margin-top:12px"><div class="panel-head"><div><div class="panel-title">Subscriptions</div><div class="panel-sub">8 active subscriptions with local currency billing</div></div></div><table><thead><tr><th>User</th><th>Plan</th><th>Billing</th><th>Amount</th><th>Currency</th><th>Renewal</th><th>Status</th></tr></thead><tbody>${subscriptions.map(s=>`<tr><td><strong>${s[0]}</strong></td><td>${badge(s[1])}</td><td>${s[2]}</td><td><strong>${s[3]}</strong></td><td>${s[4]}</td><td>${s[5]}</td><td>${badge(s[6])}</td></tr>`).join("")}</tbody></table></div>`;
+      const revenueView = () => `${kpis([["$5,104","MRR","+9.1%"],["$61,248","ARR","+14.2%"],["$9.97","ARPU","+4.3%"],["$315","LTV","+11.8%"]])}<div class="grid-2" style="margin-top:12px"><div class="panel"><div class="panel-head"><div><div class="panel-title">12-month MRR growth</div><div class="panel-sub">$1,820 to $5,104</div></div></div><div class="panel-body"><div style="height:120px;display:flex;align-items:flex-end;gap:4px">${[1820,2140,2380,2710,3050,3290,3520,3880,4120,4440,4680,5104].map((v,i)=>`<div style="flex:1;display:grid;gap:4px;text-align:center"><div title="$${v}" style="height:${v/5104*96}px;background:${i===11?"var(--gold)":"#d9d0c0"};border-radius:3px 3px 0 0"></div><span style="font-size:8px;color:var(--muted)">${["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"][i]}</span></div>`).join("")}</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Revenue by currency</div><div class="panel-sub">PHP leads at 38%</div></div></div><div class="panel-body">${[["PHP",38],["AED / SAR",24],["USD",18],["SGD",9],["JPY",6],["Other",5]].map(r=>`<div class="row"><strong style="width:90px">${r[0]}</strong><div class="bar" style="--w:${r[1]}%"><div></div></div><span>${r[1]}%</span></div>`).join("")}</div></div></div><div class="grid-2" style="margin-top:12px"><div class="panel"><div class="panel-head"><div><div class="panel-title">Revenue by plan</div></div></div><div class="panel-body">${[["Pro Monthly","$2,441",48],["Pro Annual","$1,735",34],["Agency Annual","$928",18]].map(r=>`<div class="row"><strong style="width:120px">${r[0]}</strong><div class="bar" style="--w:${r[2]}%"><div></div></div><span>${r[1]}</span></div>`).join("")}</div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Key metrics</div></div></div><div class="panel-body">${[["Free to paid conversion","18.1%"],["Monthly to annual upgrade","34.2%"],["Avg. days to upgrade","12 days"],["GCash / GrabPay / Maya","61% of PH payments"],["Failed payments (30d)","14"]].map(r=>`<div class="row"><strong>${r[0]}</strong><span style="margin-left:auto">${r[1]}</span></div>`).join("")}</div></div></div>`;
+      const templatesView = () => `<div class="panel"><div class="panel-head"><div><div class="panel-title">Templates</div><div class="panel-sub">9 templates with usage, rating, and status</div></div><button class="btn dark">Add template</button></div><table><thead><tr><th>Name</th><th>Type</th><th>Tier</th><th>Uses</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead><tbody>${templatesAdmin.map(t=>`<tr><td><strong>${t[0]}</strong></td><td>${t[1]}</td><td>${badge(t[2])}</td><td>${t[3]}</td><td>★ ${t[4]}</td><td>${badge(t[5])}</td><td><button class="btn icon">✎</button> <button class="btn icon">⧉</button> <button class="btn icon" style="color:var(--red)">×</button></td></tr>`).join("")}</tbody></table></div>`;
+      const ticketsView = () => {
+        const filtered = ticketsAll.filter(t => state.ticketFilter==="All" || (state.ticketFilter==="High priority" ? t[3]==="High" : t[4]===state.ticketFilter));
+        return `<div class="panel"><div class="panel-head"><div><div class="panel-title">Support tickets</div><div class="panel-sub">12 tickets with live filtering</div></div><div class="chips">${["All","Open","Pending","Resolved","High priority"].map(f=>`<button class="chip ${state.ticketFilter===f?"active":""}" data-ticket-filter="${f}">${f}</button>`).join("")}</div></div><table><thead><tr><th>#</th><th>User</th><th>Subject</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody>${filtered.map(t=>`<tr><td>${t[0]}</td><td><strong>${t[1]}</strong></td><td>${t[2]}</td><td>${badge(t[3])}</td><td>${badge(t[4])}</td><td>${t[5]}</td><td><button class="btn">Reply</button> <button class="btn">Resolve</button></td></tr>`).join("")}</tbody></table></div>`;
+      };
+      const flagsView = () => `<div class="panel"><div class="panel-head"><div><div class="panel-title">Feature flags</div><div class="panel-sub">Toggle any flag immediately</div></div><button class="btn dark">New flag</button></div><div class="panel-body">${flagsAll.map((f,i)=>{ const on = state.flags[f[1]] ?? f[4]; return `<div class="row" style="justify-content:space-between"><div><strong>${f[0]} <span style="font-family:ui-monospace,Consolas,monospace;color:var(--muted);font-size:11px">${f[1]}</span></strong><span>${f[2]}</span><div class="chips" style="margin-top:6px">${f[3].split(" ").map(s=>`<span class="badge ${s==="Agency"?"blue":s==="Off"?"red":"green"}">${s}</span>`).join("")}</div></div><label class="flag-switch" title="${on?"On":"Off"}"><input type="checkbox" data-flag-key="${f[1]}" ${on?"checked":""}><span></span></label></div>`}).join("")}</div></div>`;
+      const auditView = () => {
+        const filtered = auditAll.filter(a => state.auditFilter==="All" || a[0]===state.auditFilter.toLowerCase());
+        const colors = { create: "var(--green)", update: "var(--blue)", delete: "var(--red)", login: "var(--gold)" };
+        return `<div class="panel"><div class="panel-head"><div><div class="panel-title">Audit log</div><div class="panel-sub">12 event entries with masked IP addresses</div></div><div class="chips">${["All","Create","Update","Delete","Login"].map(f=>`<button class="chip ${state.auditFilter===f?"active":""}" data-audit-filter="${f}">${f}</button>`).join("")}</div></div><div class="panel-body">${filtered.map(a=>`<div class="row"><span style="width:9px;height:9px;border-radius:50%;background:${colors[a[0]]};flex:none"></span><div><strong>${a[2]}</strong><span>${a[1]} · ${a[3]} · IP: ${a[4]}</span></div><span class="badge">${a[0]}</span></div>`).join("")}</div></div>`;
+      };
+      const views = { overview, users: usersView, subscriptions: subscriptionsView, revenue: revenueView, templates: templatesView, tickets: ticketsView, flags: flagsView, audit: auditView };
+      qs("#admin").innerHTML = adminShell(views[state.adminSection]());
     }
 
     function renderPricing() {
@@ -1166,7 +1245,11 @@
       if (dec) dec.onclick = () => { state.decimals = (state.decimals + 1) % 3; renderCurrency(); bind(); };
       const saveC = qs("#saveCurrency");
       if (saveC) saveC.onclick = () => toast(`Currency saved: ${state.currency[0]}`);
+      qsa("[data-admin-section]").forEach(el => el.onclick = () => { state.adminSection = el.dataset.adminSection; renderAdmin(); bind(); });
       qsa("[data-admin-filter]").forEach(el => el.onclick = () => { state.adminFilter = el.dataset.adminFilter; renderAdmin(); bind(); });
+      qsa("[data-ticket-filter]").forEach(el => el.onclick = () => { state.ticketFilter = el.dataset.ticketFilter; renderAdmin(); bind(); });
+      qsa("[data-audit-filter]").forEach(el => el.onclick = () => { state.auditFilter = el.dataset.auditFilter; renderAdmin(); bind(); });
+      qsa("[data-flag-key]").forEach(el => el.onchange = e => { state.flags[e.target.dataset.flagKey] = e.target.checked; renderAdmin(); bind(); });
       qsa("[data-billing]").forEach(el => el.onclick = () => { state.billing = el.dataset.billing; renderPricing(); bind(); });
       const pricingCurrency = qs("#pricingCurrency");
       if (pricingCurrency) pricingCurrency.onchange = e => { state.pricingCurrency = e.target.value.split("|").map((v, i) => i === 2 ? Number(v) : v); renderPricing(); bind(); };
