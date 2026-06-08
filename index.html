@@ -498,6 +498,29 @@
     .flow-step span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.45; }
     @media (max-width: 980px) { .schema-map, .decision-grid, .flow-row { grid-template-columns: 1fr; } }
 
+    .auth-shell { display: grid; gap: 14px; }
+    .auth-tabs { display: flex; flex-wrap: wrap; gap: 0; }
+    .auth-tabs button { border: 1px solid #bbb5aa; background: #fff; padding: 10px 16px; font-weight: 800; font-size: 13px; margin-left: -1px; }
+    .auth-tabs button:first-child { margin-left: 0; border-radius: 8px 0 0 8px; }
+    .auth-tabs button:last-child { border-radius: 0 8px 8px 0; }
+    .auth-tabs button.active { background: var(--ink); color: #fffaf0; border-color: var(--ink); }
+    .auth-step { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .auth-step:last-child { border-bottom: 0; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; background: #dbeafe; color: #2563eb; display: grid; place-items: center; font-size: 11px; font-weight: 900; }
+    .auth-step h3 { margin: 0 0 5px; font-size: 14px; }
+    .auth-step p { margin: 0; color: var(--ink-2); font-size: 12px; line-height: 1.55; }
+    .auth-tag { display: inline-flex; align-items: center; margin-top: 7px; margin-right: 6px; border-radius: 999px; padding: 3px 8px; font-size: 10px; font-weight: 800; background: var(--blue-2); color: var(--blue); }
+    .auth-tag.supabase { background: var(--green-2); color: var(--green); }
+    .auth-tag.next { background: var(--gold-2); color: #80620f; }
+    .auth-tag.db { background: #f4e7c7; color: #8a5a12; }
+    .auth-tag.middleware { background: #f3e8ff; color: #6b21a8; }
+    .auth-code { font-family: ui-monospace, Consolas, monospace; background: #fffdf8; border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 10px; white-space: nowrap; }
+    .auth-route-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+    .auth-route { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 12px; }
+    .auth-route strong { display: block; font-size: 12px; }
+    .auth-route span { display: block; color: var(--muted); font-size: 11px; line-height: 1.45; margin-top: 5px; }
+    @media (max-width: 980px) { .auth-route-grid { grid-template-columns: 1fr; } .auth-tabs button { flex: 1; border-radius: 0 !important; } }
+
     .qr-live-card {
       width: min(100%, 410px);
       margin: 0 auto;
@@ -616,6 +639,7 @@
       <section class="screen" id="photos"></section>
       <section class="screen" id="currency"></section>
       <section class="screen" id="schema"></section>
+      <section class="screen" id="auth"></section>
       <section class="screen" id="admin"></section>
       <section class="screen" id="pricing"></section>
     </main>
@@ -635,6 +659,7 @@
       ["photos", "Food Photos", "Upload and tune item imagery", "▧"],
       ["currency", "Currency", "Regional pricing display", "$"],
       ["schema", "Schema", "Database architecture and ERD decisions", "DB"],
+      ["auth", "Auth Flows", "Sign-up, sign-in, reset, and onboarding", "AU"],
       ["admin", "Admin", "Users, subscriptions and flags", "⚙"],
       ["pricing", "Pricing", "Plans and upgrade flows", "★"]
     ];
@@ -715,6 +740,7 @@
       auditFilter: "All",
       flags: {},
       schemaTab: "Core",
+      authFlow: "Sign-up",
       billing: "monthly",
       pricingCurrency: ["PHP", "₱", 1],
       openFaqs: new Set([0])
@@ -1475,6 +1501,67 @@
         </div>`;
     }
 
+    function renderAuth() {
+      const flows = ["Sign-up", "Email sign-in", "Google OAuth", "Password reset", "Onboarding"];
+      const tagClass = (tag) => tag === "supabase auth" || tag === "supabase + google" ? "supabase" : tag === "next.js" ? "next" : tag === "db trigger" ? "db" : tag === "middleware" ? "middleware" : "";
+      const step = (i, title, body, tags = []) => `
+        <div class="auth-step">
+          <div class="step-num">${i}</div>
+          <div><h3>${title}</h3><p>${body}</p><div>${tags.map(t=>`<span class="auth-tag ${tagClass(t)}">${t}</span>`).join("")}</div></div>
+        </div>`;
+      const flowMap = {
+        "Sign-up": [
+          ["User submits sign-up form", `Email, password, full name. Client validates with <span class="auth-code">Zod</span> before sending.`, ["client"]],
+          ["Supabase creates auth user", `<span class="auth-code">supabase.auth.signUp()</span> sends confirmation email and returns an unconfirmed session.`, ["supabase auth"]],
+          ["Database trigger creates profile row", `A Postgres function fires on <span class="auth-code">auth.users INSERT</span> and creates matching <span class="auth-code">users</span> + <span class="auth-code">profiles</span> rows with default free plan.`, ["db trigger"]],
+          ["User confirms email", `Supabase sends a magic link. On click, session is activated and Supabase redirects to <span class="auth-code">/auth/callback?code=...</span>.`, ["supabase auth"]],
+          ["Callback route exchanges code for session", `Next.js route handler calls <span class="auth-code">exchangeCodeForSession()</span>, sets cookies, and redirects to onboarding.`, ["next.js"]]
+        ],
+        "Email sign-in": [
+          ["User submits email + password", `Client calls <span class="auth-code">supabase.auth.signInWithPassword()</span> directly, so no server round-trip is needed.`, ["client"]],
+          ["Supabase validates credentials", `Returns session tokens, access + refresh, on success or an error code on failure.`, ["supabase auth"]],
+          ["Session stored in cookies", `<span class="auth-code">@supabase/auth-helpers-nextjs</span> persists tokens in HttpOnly cookies for SSR access.`, ["client"]],
+          ["Middleware validates every request", `Next.js middleware refreshes the token and redirects unauthenticated users away from protected routes.`, ["middleware"]]
+        ],
+        "Google OAuth": [
+          ["User clicks Continue with Google", `Client calls <span class="auth-code">signInWithOAuth({ provider: 'google', redirectTo: '/auth/callback' })</span>.`, ["client"]],
+          ["Redirect to Google consent screen", `Supabase builds the OAuth URL. User grants permissions on Google's UI.`, ["supabase + google"]],
+          ["Google redirects back with code", `Returns to <span class="auth-code">/auth/callback?code=...</span>. The same callback route handles email confirmation and OAuth.`, ["next.js"]],
+          ["Trigger fires for new Google users", `On first OAuth sign-in, Supabase inserts into <span class="auth-code">auth.users</span>. The same trigger creates <span class="auth-code">users</span> + <span class="auth-code">profiles</span> rows.`, ["db trigger"]],
+          ["Check if profile is complete", `Callback checks if <span class="auth-code">profiles.restaurant_name IS NULL</span>. New users go to onboarding; returning users go to dashboard.`, ["next.js"]]
+        ],
+        "Password reset": [
+          ["User enters email on forgot-password page", `Client calls <span class="auth-code">resetPasswordForEmail()</span> with a <span class="auth-code">redirectTo</span> pointing to the update-password page.`, ["client"]],
+          ["Supabase sends reset email", `Email contains a one-time link valid for 1 hour. Always show "check your email" and never confirm whether the address exists.`, ["supabase auth"]],
+          ["User clicks link -> /auth/callback", `Same callback route runs. Supabase sets a short-lived session scoped only to password update.`, ["next.js"]],
+          ["User sets new password", `Form calls <span class="auth-code">supabase.auth.updateUser({ password })</span>. Session is upgraded to a full session on success.`, ["client"]]
+        ],
+        "Onboarding": [
+          ["Redirect after first sign-in", `Callback route detects empty <span class="auth-code">profiles.restaurant_name</span> and sends new users to <span class="auth-code">/onboarding</span>.`, ["next.js"]],
+          ["Step 1 - restaurant basics", `Collect restaurant name, tagline, phone, WhatsApp, and address. Save immediately on blur via <span class="auth-code">UPSERT</span>.`, ["client"]],
+          ["Step 2 - logo and brand colours", `Logo uploads to Supabase Storage. Two brand colour pickers update the preview live.`, ["client"]],
+          ["Step 3 - pick a starter template", `Show 3 recommended templates based on restaurant type. Selecting one creates the first <span class="auth-code">menus</span> row.`, ["client"]],
+          ["Redirect to editor", `Onboarding complete. Redirect to <span class="auth-code">/dashboard/menus/[id]/edit</span> with the new menu open and ready.`, ["next.js"]]
+        ]
+      };
+      const routeCards = [
+        ["Client forms", "Zod validates sign-up, sign-in, reset, and onboarding forms before Supabase calls."],
+        ["/auth/callback", "Shared Next.js route exchanges email-confirmation and OAuth codes for sessions."],
+        ["Auth trigger", "Postgres trigger mirrors auth.users into public users and profiles rows."],
+        ["Middleware", "Refreshes tokens, protects dashboard routes, and redirects unauthenticated users."]
+      ];
+      qs("#auth").innerHTML = `
+        <div class="auth-shell">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">Auth & user flows</div><div class="panel-sub">Supabase Auth, Next.js callbacks, profile setup, and protected dashboard access</div></div></div><div class="panel-body">
+            <div class="auth-tabs">${flows.map(f=>`<button class="${state.authFlow===f?"active":""}" data-auth-flow="${f}">${f}</button>`).join("")}</div>
+          </div></div>
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">${state.authFlow}</div><div class="panel-sub">Implementation path and security boundary</div></div></div><div class="panel-body">
+            ${flowMap[state.authFlow].map((s,i)=>step(i+1,s[0],s[1],s[2])).join("")}
+          </div></div>
+          <div class="auth-route-grid">${routeCards.map(r=>`<div class="auth-route"><strong>${r[0]}</strong><span>${r[1]}</span></div>`).join("")}</div>
+        </div>`;
+    }
+
     function renderPricing() {
       const [code, symbol, rate] = state.pricingCurrency;
       const base = { proMonthly: 499, proAnnualMonthly: 349, agencyMonthly: 1499, agencyAnnualMonthly: 1049 };
@@ -1633,6 +1720,7 @@
       renderPhotos();
       renderCurrency();
       renderSchema();
+      renderAuth();
       renderAdmin();
       renderPricing();
       bind();
@@ -1808,6 +1896,7 @@
       const saveC = qs("#saveCurrency");
       if (saveC) saveC.onclick = () => toast(`Currency saved: ${state.currency[0]}`);
       qsa("[data-schema-tab]").forEach(el => el.onclick = () => { state.schemaTab = el.dataset.schemaTab; renderSchema(); bind(); });
+      qsa("[data-auth-flow]").forEach(el => el.onclick = () => { state.authFlow = el.dataset.authFlow; renderAuth(); bind(); });
       qsa("[data-admin-section]").forEach(el => el.onclick = () => { state.adminSection = el.dataset.adminSection; renderAdmin(); bind(); });
       qsa("[data-admin-filter]").forEach(el => el.onclick = () => { state.adminFilter = el.dataset.adminFilter; renderAdmin(); bind(); });
       qsa("[data-ticket-filter]").forEach(el => el.onclick = () => { state.ticketFilter = el.dataset.ticketFilter; renderAdmin(); bind(); });
