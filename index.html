@@ -597,6 +597,23 @@
     .currency-list { max-height: 540px; overflow: auto; }
     .currency-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 9px; align-items: center; padding: 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
     .currency-row.active { background: var(--blue-2); }
+    .currency-settings { display: grid; grid-template-columns: minmax(340px,.9fr) minmax(360px,1fr); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); }
+    .currency-picker { border-right: 1px solid var(--line); background: #fffdf8; }
+    .currency-search { padding: 12px; border-bottom: 1px solid var(--line); }
+    .currency-search input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+    .currency-region { padding: 10px 12px 6px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 850; background: #fbfaf6; }
+    .currency-row strong { font-size: 12px; }
+    .currency-row span { font-size: 11px; color: var(--muted); }
+    .currency-symbol { font-weight: 900; color: var(--ink); white-space: nowrap; }
+    .currency-preview-menu { margin: 12px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+    .currency-preview-head { background: #17130f; color: #fffaf0; padding: 16px; }
+    .currency-preview-head h2 { margin: 0; color: var(--gold); font-family: Georgia, serif; font-size: 18px; }
+    .currency-preview-section { text-align: center; color: #80620f; font-size: 10px; font-weight: 900; text-transform: uppercase; margin: 14px 18px 4px; border-top: 1px solid var(--line); padding-top: 8px; }
+    .format-grid { display: grid; gap: 12px; }
+    .format-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: center; }
+    .format-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    .format-buttons .chip.active { background: #e7f0ff; border-color: #8bb8ff; color: #155eab; }
+    @media (max-width: 980px) { .currency-settings { grid-template-columns: 1fr; } .currency-picker { border-right: 0; border-bottom: 1px solid var(--line); } }
 
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
@@ -782,6 +799,9 @@
       photoUploadProgress: 0,
       photoUrl: "",
       currency: currencies[2],
+      currencySearch: "",
+      currencySymbolPosition: "before",
+      currencyThousands: ",",
       decimals: 0,
       adminFilter: "All",
       adminSection: "overview",
@@ -1352,7 +1372,7 @@
       return `${state.currency[1]} ${Number(n).toLocaleString(undefined,{minimumFractionDigits:state.decimals,maximumFractionDigits:state.decimals})}`;
     }
 
-    function renderCurrency() {
+    function renderCurrencyOld() {
       qs("#currency").innerHTML = `
         <div class="split">
           <div class="panel"><div class="panel-head"><div><div class="panel-title">Select currency</div><div class="panel-sub">Regional menu pricing display</div></div><button class="btn dark" id="saveCurrency">Save</button></div>
@@ -1363,6 +1383,66 @@
               ${menuItems.map((i,idx)=>`<div class="row"><div class="thumb ${i.photo}">${i.name[0]}</div><div><strong>${i.name}</strong><span>${i.desc}</span></div><strong style="color:#80620f;margin-left:auto">${price(i.price,idx)}</strong></div>`).join("")}
               <div class="panel" style="margin-top:12px"><div class="panel-body"><div class="chips"><button class="chip active">Symbol before</button><button class="chip">Symbol after</button><button class="chip" id="decimals">Decimals: ${state.decimals}</button></div></div></div>
             </div>
+          </div>
+        </div>`;
+    }
+
+    function renderCurrency() {
+      const allCurrencies = [
+        ["Asia Pacific", [
+          ["PHP","₱","Philippine Peso","Philippines","PH",1,0,","],["SGD","S$","Singapore Dollar","Singapore","SG",0.023,2,","],["MYR","RM","Malaysian Ringgit","Malaysia","MY",0.079,2,","],["IDR","Rp","Indonesian Rupiah","Indonesia","ID",276,0,","],["THB","฿","Thai Baht","Thailand","TH",0.61,0,","],["VND","₫","Vietnamese Dong","Vietnam","VN",438,0,","],["INR","₹","Indian Rupee","India","IN",1.5,0,","],["PKR","Rs","Pakistani Rupee","Pakistan","PK",4.76,0,","],["BDT","৳","Bangladeshi Taka","Bangladesh","BD",1.98,0,","],["LKR","Rs","Sri Lankan Rupee","Sri Lanka","LK",5.15,0,","],["AUD","A$","Australian Dollar","Australia","AU",0.026,2,","],["NZD","NZ$","New Zealand Dollar","New Zealand","NZ",0.028,2,","],["JPY","¥","Japanese Yen","Japan","JP",2.66,0,","],["CNY","¥","Chinese Yuan","China","CN",0.12,2,","],["KRW","₩","South Korean Won","South Korea","KR",23.3,0,","],["HKD","HK$","Hong Kong Dollar","Hong Kong","HK",0.13,2,","],["TWD","NT$","New Taiwan Dollar","Taiwan","TW",0.54,0,","]]],
+        ["Middle East", [
+          ["AED","AED","UAE Dirham","United Arab Emirates","AE",0.063,2,","],["SAR","SAR","Saudi Riyal","Saudi Arabia","SA",0.064,2,","],["QAR","QAR","Qatari Riyal","Qatar","QA",0.063,2,","],["KWD","KWD","Kuwaiti Dinar","Kuwait","KW",0.0053,3,","],["BHD","BHD","Bahraini Dinar","Bahrain","BH",0.0065,3,","],["OMR","OMR","Omani Rial","Oman","OM",0.0066,3,","],["JOD","JOD","Jordanian Dinar","Jordan","JO",0.012,3,","],["EGP","EGP","Egyptian Pound","Egypt","EG",0.82,2,","]]],
+        ["Europe", [
+          ["EUR","€","Euro","Eurozone","EU",0.016,2,"."],["GBP","£","British Pound","United Kingdom","GB",0.014,2,","],["CHF","CHF","Swiss Franc","Switzerland","CH",0.015,2," "],["SEK","kr","Swedish Krona","Sweden","SE",0.18,2," "],["NOK","kr","Norwegian Krone","Norway","NO",0.18,2," "],["DKK","kr","Danish Krone","Denmark","DK",0.12,2,"."],["PLN","zł","Polish Zloty","Poland","PL",0.07,2," "],["CZK","Kč","Czech Koruna","Czech Republic","CZ",0.39,2," "],["HUF","Ft","Hungarian Forint","Hungary","HU",6.28,0," "],["TRY","₺","Turkish Lira","Turkey","TR",0.55,2,"."],["RUB","₽","Russian Ruble","Russia","RU",1.54,2," "],["UAH","₴","Ukrainian Hryvnia","Ukraine","UA",0.71,2," "]]],
+        ["Americas", [
+          ["USD","$","US Dollar","United States","US",0.017,2,","],["MXN","$","Mexican Peso","Mexico","MX",0.32,2,","],["BRL","R$","Brazilian Real","Brazil","BR",0.09,2,"."],["ARS","$","Argentine Peso","Argentina","AR",15.5,0,"."],["COP","$","Colombian Peso","Colombia","CO",67.4,0,"."],["CLP","$","Chilean Peso","Chile","CL",16.1,0,"."],["CAD","CA$","Canadian Dollar","Canada","CA",0.024,2,","]]],
+        ["Africa", [
+          ["ZAR","R","South African Rand","South Africa","ZA",0.31,2," "],["NGN","₦","Nigerian Naira","Nigeria","NG",26.1,0,","],["KES","KSh","Kenyan Shilling","Kenya","KE",2.23,0,","],["GHS","GH₵","Ghanaian Cedi","Ghana","GH",0.26,2,","],["MAD","MAD","Moroccan Dirham","Morocco","MA",0.17,2," "],["ETB","ETB","Ethiopian Birr","Ethiopia","ET",0.98,2,","]]]
+      ];
+      const flat = allCurrencies.flatMap(([region, rows]) => rows.map(r => ({ region, code:r[0], symbol:r[1], name:r[2], country:r[3], flag:r[4], rate:r[5], defaultDecimals:r[6], defaultSep:r[7] })));
+      const active = flat.find(c => c.code === state.currency[0]) || flat[0];
+      const query = state.currencySearch.toLowerCase().trim();
+      const matches = (c) => !query || [c.code,c.symbol,c.name,c.country,c.region].join(" ").toLowerCase().includes(query);
+      state.currency = [active.code, active.symbol, active.country, []];
+      const formatNumber = (n) => {
+        const fixed = Number(n).toFixed(state.decimals);
+        const [whole, dec] = fixed.split(".");
+        const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, state.currencyThousands);
+        return dec ? `${grouped}.${dec}` : grouped;
+      };
+      const formatMoney = (php) => {
+        const amount = formatNumber(php * active.rate);
+        return state.currencySymbolPosition === "before" ? `${active.symbol} ${amount}` : `${amount} ${active.symbol}`;
+      };
+      const dishes = [
+        ["Crispy Pata","Deep-fried pork knuckle, liver sauce",580,"food-1","Mains"],
+        ["Kare-Kare","Oxtail stew, peanut sauce, bagoong",490,"food-2","Mains"],
+        ["Sinigang na Salmon","Tamarind broth, vegetables",420,"food-4","Mains"],
+        ["Sinangag na Kanin","Garlic fried rice",85,"food-3","Rice & Sides"],
+        ["Ensaladang Talong","Grilled eggplant salad",120,"food-5","Rice & Sides"],
+        ["Buko Pandan","Young coconut, pandan jelly",95,"food-2","Drinks"]
+      ];
+      qs("#currency").innerHTML = `
+        <div class="currency-settings">
+          <div class="currency-picker"><div class="panel-head"><div><div class="panel-title">Select currency</div><div class="panel-sub">50 currencies supported worldwide</div></div></div>
+            <div class="currency-search"><input id="currencySearch" value="${state.currencySearch}" placeholder="Search currency or country..."></div>
+            <div class="currency-list">${allCurrencies.map(([region, rows]) => {
+              const visible = rows.map(r => ({ region, code:r[0], symbol:r[1], name:r[2], country:r[3], flag:r[4], rate:r[5], defaultDecimals:r[6], defaultSep:r[7] })).filter(matches);
+              if (!visible.length) return "";
+              return `<div class="currency-region">${region}</div>${visible.map(c=>`<div class="currency-row ${active.code===c.code?"active":""}" data-currency-code="${c.code}" data-decimals-default="${c.defaultDecimals}" data-sep-default="${c.defaultSep}"><span>${c.flag}</span><div><strong>${c.name}</strong><span>${c.country} · ${c.code}</span></div><span class="currency-symbol">${c.symbol}</span></div>`).join("")}`;
+            }).join("")}</div>
+          </div>
+          <div><div class="panel-head"><div><div class="panel-title">Live preview</div><div class="panel-sub">See how prices appear on your menu</div></div><span class="badge green">${active.code} · ${active.symbol}</span></div>
+            <div class="currency-preview-menu"><div class="currency-preview-head"><h2>Kusina ni Lola</h2><div style="font-size:10px;color:rgba(255,250,240,.62);text-transform:uppercase">Authentic Filipino Cuisine · Manila</div></div>
+              ${["Mains","Rice & Sides","Drinks"].map(section => `<div class="currency-preview-section">${section}</div>${dishes.filter(d=>d[4]===section).map(d=>`<div class="row" style="padding:10px 14px"><div class="thumb ${d[3]}">${d[0][0]}</div><div><strong>${d[0]}</strong><span>${d[1]}</span></div><strong style="margin-left:auto;color:#80620f">${formatMoney(d[2])}</strong></div>`).join("")}`).join("")}
+            </div>
+            <div class="panel" style="margin:12px"><div class="panel-body format-grid">
+              <div class="format-row"><strong>Symbol position</strong><div class="format-buttons"><button class="chip ${state.currencySymbolPosition==="before"?"active":""}" data-symbol-position="before">${formatMoney(580)} (before)</button><button class="chip ${state.currencySymbolPosition==="after"?"active":""}" data-symbol-position="after">${formatNumber(580 * active.rate)} ${active.symbol} (after)</button></div></div>
+              <div class="format-row"><strong>Decimal places</strong><div class="format-buttons"><button class="chip" id="decDown">-</button><span class="chip active">${state.decimals}</span><button class="chip" id="decUp">+</button><span style="font-size:11px;color:var(--muted)">Example: ${formatMoney(580)}</span></div></div>
+              <div class="format-row"><strong>Thousands separator</strong><div class="format-buttons">${[",","."," "].map(sep=>`<button class="chip ${state.currencyThousands===sep?"active":""}" data-thousands="${sep}">${sep===" "?"1 000":`1${sep}000`}</button>`).join("")}</div></div>
+            </div></div>
+            <div class="panel" style="margin:12px"><div class="panel-body"><strong>Schema placement</strong><p style="color:var(--muted);line-height:1.55;margin-bottom:0">Store <code>currency</code> and <code>currency_format</code> on <code>profiles</code>, inherited by all menus under that restaurant profile. The editor reads <code>profiles.currency</code> on load. A per-menu override can live in <code>menus.branding_overrides.currency</code> and takes precedence when set.</p></div></div>
           </div>
         </div>`;
     }
@@ -2039,8 +2119,22 @@ router.push(\`/dashboard/menus/\${menu.id}/edit\`);`
       const savePhotoItem = qs("#savePhotoItem");
       if (savePhotoItem) savePhotoItem.onclick = () => toast(`${state.photoName} saved with ${state.photoBadges.size} badges`);
       qsa("[data-currency]").forEach(el => el.onclick = () => { state.currency = currencies.find(c => c[0] === el.dataset.currency); renderCurrency(); renderEditor(); renderPublic(); bind(); });
+      qsa("[data-currency-code]").forEach(el => el.onclick = () => {
+        state.currency = [el.dataset.currencyCode, el.querySelector(".currency-symbol")?.textContent || el.dataset.currencyCode, "", []];
+        state.decimals = Number(el.dataset.decimalsDefault || 0);
+        state.currencyThousands = el.dataset.sepDefault || ",";
+        renderCurrency(); renderEditor(); renderPublic(); bind();
+      });
+      const currencySearch = qs("#currencySearch");
+      if (currencySearch) currencySearch.oninput = e => { state.currencySearch = e.target.value; renderCurrency(); bind(); qs("#currencySearch")?.focus(); };
+      qsa("[data-symbol-position]").forEach(el => el.onclick = () => { state.currencySymbolPosition = el.dataset.symbolPosition; renderCurrency(); bind(); });
+      qsa("[data-thousands]").forEach(el => el.onclick = () => { state.currencyThousands = el.dataset.thousands; renderCurrency(); bind(); });
+      const decDown = qs("#decDown");
+      if (decDown) decDown.onclick = () => { state.decimals = Math.max(0, state.decimals - 1); renderCurrency(); bind(); };
+      const decUp = qs("#decUp");
+      if (decUp) decUp.onclick = () => { state.decimals = Math.min(3, state.decimals + 1); renderCurrency(); bind(); };
       const dec = qs("#decimals");
-      if (dec) dec.onclick = () => { state.decimals = (state.decimals + 1) % 3; renderCurrency(); bind(); };
+      if (dec) dec.onclick = () => { state.decimals = (state.decimals + 1) % 4; renderCurrency(); bind(); };
       const saveC = qs("#saveCurrency");
       if (saveC) saveC.onclick = () => toast(`Currency saved: ${state.currency[0]}`);
       qsa("[data-schema-tab]").forEach(el => el.onclick = () => { state.schemaTab = el.dataset.schemaTab; renderSchema(); bind(); });
