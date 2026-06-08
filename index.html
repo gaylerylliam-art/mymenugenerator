@@ -478,6 +478,26 @@
     .photo-tips { margin: 14px 18px; }
     @media (max-width: 980px) { .photo-shell { grid-template-columns: 1fr; } .photo-editor { border-right: 0; border-bottom: 1px solid var(--line); } }
 
+    .schema-shell { display: grid; gap: 14px; }
+    .schema-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+    .schema-tabs .chip.active { background: var(--ink); color: #fffaf0; border-color: var(--ink); }
+    .schema-map { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; align-items: stretch; }
+    .schema-table { border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; min-height: 100%; }
+    .schema-table h3 { margin: 0; padding: 10px 12px; background: #17130f; color: #fffaf0; font-size: 13px; }
+    .schema-table ul { list-style: none; margin: 0; padding: 8px 12px 12px; display: grid; gap: 5px; }
+    .schema-table li { font-size: 11px; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid #f0eadf; padding-bottom: 4px; }
+    .schema-table li:last-child { border-bottom: 0; }
+    .schema-table code, .decision-card code { font-family: ui-monospace, Consolas, monospace; font-size: 10px; color: #80620f; }
+    .decision-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+    .decision-card { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .decision-card h3 { margin: 0 0 8px; font-size: 14px; }
+    .decision-card p { margin: 0; color: var(--muted); line-height: 1.55; font-size: 12px; }
+    .flow-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+    .flow-step { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #fff; position: relative; }
+    .flow-step strong { display: block; font-size: 13px; }
+    .flow-step span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    @media (max-width: 980px) { .schema-map, .decision-grid, .flow-row { grid-template-columns: 1fr; } }
+
     .qr-live-card {
       width: min(100%, 410px);
       margin: 0 auto;
@@ -595,6 +615,7 @@
       <section class="screen" id="public"></section>
       <section class="screen" id="photos"></section>
       <section class="screen" id="currency"></section>
+      <section class="screen" id="schema"></section>
       <section class="screen" id="admin"></section>
       <section class="screen" id="pricing"></section>
     </main>
@@ -613,6 +634,7 @@
       ["public", "Digital Menu", "Customer-facing mobile menu", "◉"],
       ["photos", "Food Photos", "Upload and tune item imagery", "▧"],
       ["currency", "Currency", "Regional pricing display", "$"],
+      ["schema", "Schema", "Database architecture and ERD decisions", "DB"],
       ["admin", "Admin", "Users, subscriptions and flags", "⚙"],
       ["pricing", "Pricing", "Plans and upgrade flows", "★"]
     ];
@@ -692,6 +714,7 @@
       ticketFilter: "All",
       auditFilter: "All",
       flags: {},
+      schemaTab: "Core",
       billing: "monthly",
       pricingCurrency: ["PHP", "₱", 1],
       openFaqs: new Set([0])
@@ -1388,6 +1411,70 @@
       qs("#admin").innerHTML = adminShell(views[state.adminSection]());
     }
 
+    function renderSchema() {
+      const tabs = ["Core", "Domain Map", "Ops", "Decisions"];
+      const fieldList = (rows) => rows.map(r => `<li><code>${r[0]}</code><span>${r[1]}</span></li>`).join("");
+      const tableBox = (name, rows, note = "") => `<div class="schema-table"><h3>${name}</h3><ul>${fieldList(rows)}</ul>${note ? `<div style="padding:0 12px 12px;color:var(--muted);font-size:11px;line-height:1.45">${note}</div>` : ""}</div>`;
+      const decision = (title, body) => `<div class="decision-card"><h3>${title}</h3><p>${body}</p></div>`;
+      const core = `
+        <div class="schema-map">
+          ${tableBox("users", [["id","pk, Supabase auth mirror"],["email","unique identity"],["plan_tier","Free, Pro, Agency"],["created_at","signup timestamp"]], "Identity only. Restaurant branding stays out of this table.")}
+          ${tableBox("profiles", [["id","pk"],["user_id","fk -> users.id, unique now"],["restaurant_name","brand identity"],["logo_url","restaurant asset"],["theme","public menu styling"]], "1:1 today, can become 1:N for Agency multi-profile support.")}
+          ${tableBox("menus", [["id","pk"],["user_id","owner fk"],["profile_id","brand fk"],["template_id","design fk"],["status","draft, live, archived"]], "Three foreign keys separate ownership, restaurant brand, and template design.")}
+          ${tableBox("menu_items", [["id","pk"],["menu_id","fk -> menus.id"],["name / name_ar","bilingual names"],["description / description_ar","bilingual copy"],["price","localized display source"]], "Inline bilingual fields are pragmatic while the product supports two languages.")}
+        </div>
+        <div class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-title">Core relationships</div><div class="panel-sub">Ownership, profile branding, templates, and bilingual menu content</div></div></div><div class="panel-body">
+          <div class="flow-row">
+            <div class="flow-step"><strong>users -> profiles</strong><span>One auth user owns one restaurant profile today.</span></div>
+            <div class="flow-step"><strong>profiles -> menus</strong><span>A menu chooses which restaurant brand to render.</span></div>
+            <div class="flow-step"><strong>templates -> menus</strong><span>Each menu can use a different visual template.</span></div>
+            <div class="flow-step"><strong>menus -> menu_items</strong><span>Items inherit menu ownership and publish state.</span></div>
+          </div>
+        </div></div>`;
+      const domain = `
+        <div class="grid-3">
+          ${decision("Identity Domain", "Supabase Auth remains the source of truth. The users table mirrors auth identity and plan tier so application queries do not mix identity with restaurant branding.")}
+          ${decision("Restaurant Domain", "profiles stores restaurant name, logo, theme, contact details, and public menu branding. Agency expansion means allowing multiple profiles per user.")}
+          ${decision("Menu Domain", "menus connects owner, profile, and template. menu_items carries bilingual item copy, price, badges, photo metadata, sort order, and availability.")}
+        </div>
+        <div class="schema-map" style="margin-top:14px">
+          ${tableBox("templates", [["id","pk"],["tier","Free or Pro"],["layout_json","editor design system"],["status","draft or live"]])}
+          ${tableBox("exports", [["id","pk"],["menu_id","fk"],["format","PDF, PNG, social"],["status","queued, rendering, done"],["storage_path","private artifact"]])}
+          ${tableBox("qr_codes", [["id","pk"],["menu_id","fk"],["public_url","scan target"],["style_json","colors, size, logo"],["is_active","routing switch"]])}
+          ${tableBox("menu_views", [["id","pk"],["menu_id","fk"],["device","Android, iOS, desktop"],["country","geo rollup"],["created_at","event time"]])}
+        </div>`;
+      const ops = `
+        <div class="schema-map">
+          ${tableBox("stripe_events", [["id","pk"],["stripe_event_id","unique idempotency key"],["type","webhook type"],["processed","boolean"],["received_at","insert time"]], "Check stripe_event_id before processing because Stripe retries duplicate webhooks.")}
+          ${tableBox("subscriptions", [["id","pk"],["user_id","fk"],["stripe_customer_id","billing identity"],["plan_tier","current entitlement"],["status","active, past_due, canceled"]])}
+          ${tableBox("feature_flags", [["id","pk"],["key","flag name"],["enabled_globally","global scope"],["user_id","beta override"],["plan_tier","plan rollout"]], "Resolution order: user override -> plan -> global.")}
+          ${tableBox("audit_log", [["id","pk"],["actor_user_id","admin or system"],["event_type","create, update, delete"],["description","human readable"],["ip_masked","privacy-safe trace"]])}
+        </div>
+        <div class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-title">Operational pipelines</div><div class="panel-sub">Webhook safety, feature flag resolution, and analytics aggregation</div></div></div><div class="panel-body">
+          <div class="flow-row">
+            <div class="flow-step"><strong>Stripe webhook arrives</strong><span>Insert stripe_event_id into stripe_events.</span></div>
+            <div class="flow-step"><strong>Idempotency check</strong><span>If the event exists and processed is true, skip it.</span></div>
+            <div class="flow-step"><strong>Apply subscription change</strong><span>Update subscriptions and users.plan_tier.</span></div>
+            <div class="flow-step"><strong>Mark processed</strong><span>Set processed true after successful side effects.</span></div>
+          </div>
+        </div></div>`;
+      const decisions = `
+        <div class="decision-grid">
+          ${decision("profiles stays separate from users", "users mirrors Supabase Auth and stores identity fields only. profiles owns restaurant branding. Moving from 1:1 to 1:N later enables Agency users without changing the auth table.")}
+          ${decision("menus has three foreign keys", "user_id controls ownership, profile_id selects the restaurant brand, and template_id selects the design. This allows multiple restaurants and multiple menus per restaurant.")}
+          ${decision("menu_items stores bilingual fields inline", "name, name_ar, description, and description_ar live on the row. This is simpler for two-language menus; migrate to menu_item_translations only when supporting many languages.")}
+          ${decision("stripe_events is an idempotency log", "Every webhook writes stripe_event_id before processing. Duplicate Stripe retries are ignored once processed is true.")}
+          ${decision("feature_flags supports three scopes", "A flag can be global, user-specific, or plan-based. Resolution order is user override -> plan -> global.")}
+          ${decision("menu_views is append-only", "Analytics events are only inserted, never updated. Dashboard metrics should use nightly refreshed rollups or materialized views instead of raw event scans.")}
+        </div>`;
+      const views = { Core: core, "Domain Map": domain, Ops: ops, Decisions: decisions };
+      qs("#schema").innerHTML = `
+        <div class="schema-shell">
+          <div class="panel"><div class="panel-head"><div><div class="panel-title">MenuCraft database schema</div><div class="panel-sub">Core ERD, domain boundaries, operations tables, and schema decisions</div></div><div class="schema-tabs">${tabs.map(t=>`<button class="chip ${state.schemaTab===t?"active":""}" data-schema-tab="${t}">${t}</button>`).join("")}</div></div></div>
+          ${views[state.schemaTab]}
+        </div>`;
+    }
+
     function renderPricing() {
       const [code, symbol, rate] = state.pricingCurrency;
       const base = { proMonthly: 499, proAnnualMonthly: 349, agencyMonthly: 1499, agencyAnnualMonthly: 1049 };
@@ -1545,6 +1632,7 @@
       renderPublic();
       renderPhotos();
       renderCurrency();
+      renderSchema();
       renderAdmin();
       renderPricing();
       bind();
@@ -1719,6 +1807,7 @@
       if (dec) dec.onclick = () => { state.decimals = (state.decimals + 1) % 3; renderCurrency(); bind(); };
       const saveC = qs("#saveCurrency");
       if (saveC) saveC.onclick = () => toast(`Currency saved: ${state.currency[0]}`);
+      qsa("[data-schema-tab]").forEach(el => el.onclick = () => { state.schemaTab = el.dataset.schemaTab; renderSchema(); bind(); });
       qsa("[data-admin-section]").forEach(el => el.onclick = () => { state.adminSection = el.dataset.adminSection; renderAdmin(); bind(); });
       qsa("[data-admin-filter]").forEach(el => el.onclick = () => { state.adminFilter = el.dataset.adminFilter; renderAdmin(); bind(); });
       qsa("[data-ticket-filter]").forEach(el => el.onclick = () => { state.ticketFilter = el.dataset.ticketFilter; renderAdmin(); bind(); });
